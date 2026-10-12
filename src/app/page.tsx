@@ -9,6 +9,7 @@ import ProjectsSection from '@/components/ProjectsSection';
 import ManifestoSection from '@/components/ManifestoSection';
 import ContactSection from '@/components/ContactSection';
 import Footer from '@/components/Footer';
+import MaintenanceOverlay from '@/components/MaintenanceOverlay';
 import {
   getServices,
   getReferences,
@@ -85,6 +86,9 @@ export default function HomePage() {
 
       {/* Footer */}
       <Footer settings={settings} services={services} />
+
+      {/* SEO-safe Maintenance Mode Overlay */}
+      <MaintenanceOverlay settings={settings} />
     </div>
   );
 }

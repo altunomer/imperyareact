@@ -47,6 +47,15 @@ export interface SiteSettings {
   instagram: string;
   linkedin: string;
   youtube: string;
+  // Maintenance Mode
+  maintenanceMode: boolean;
+  maintenanceTitle: string;
+  maintenanceMessage: string;
+  // PayTR Settings
+  paytrMerchantId: string;
+  paytrMerchantKey: string;
+  paytrMerchantSalt: string;
+  paytrTestMode: boolean;
 }
 
 export interface ContactInquiry {
@@ -56,5 +65,17 @@ export interface ContactInquiry {
   phone: string;
   service: string;
   message: string;
+  createdAt: string;
+}
+
+export interface PaymentTransaction {
+  id: string;
+  merchantOid: string;
+  clientName: string;
+  email: string;
+  phone: string;
+  amount: number;
+  description: string;
+  status: 'pending' | 'success' | 'failed';
   createdAt: string;
 }

@@ -215,4 +215,13 @@ export const initialSettings: SiteSettings = {
   instagram: 'https://instagram.com/imperyamediasolutions',
   linkedin: 'https://linkedin.com/company/imperyamediasolutions',
   youtube: 'https://youtube.com',
+  // Maintenance Mode (Off by default, togglable in /admin)
+  maintenanceMode: false,
+  maintenanceTitle: 'Yeni Web Sitemiz Çok Yakında Yayında!',
+  maintenanceMessage: 'İmperya Media Solutions olarak sizlere daha iyi bir deneyim sunmak için dijital deneyimimizi güncelliyoruz. Çok yakında buradayız.',
+  // PayTR
+  paytrMerchantId: '',
+  paytrMerchantKey: '',
+  paytrMerchantSalt: '',
+  paytrTestMode: true,
 };

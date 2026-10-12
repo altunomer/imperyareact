@@ -768,12 +768,146 @@ export default function AdminPage() {
                 </div>
               </div>
 
+              {/* YAPIM AŞAMASI MODU (MAINTENANCE) */}
+              <div className="p-6 rounded-2xl border border-zinc-800 bg-zinc-950/70 mt-4">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                      <span>Yapım Aşaması Modu</span>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${settings.maintenanceMode ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'}`}>
+                        {settings.maintenanceMode ? 'ŞU AN AKTİF' : 'KAPALI (Site Yayında)'}
+                      </span>
+                    </h3>
+                    <p className="text-xs text-zinc-400 mt-1">
+                      Aktif edildiğinde ziyaretçilere şık bir duyuru gösterilir. Arama motoru botları (Googlebot vb.) arka plandaki ajans anahtar kelimelerinizi okumaya devam eder, sıralama kaybı yaşanmaz.
+                    </p>
+                  </div>
+
+                  <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                    <input
+                      type="checkbox"
+                      checked={settings.maintenanceMode}
+                      onChange={(e) => setSettings({ ...settings, maintenanceMode: e.target.checked })}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-zinc-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+                  </label>
+                </div>
+
+                {settings.maintenanceMode && (
+                  <div className="space-y-4 pt-3 border-t border-zinc-800/80 animate-in fade-in">
+                    <div>
+                      <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
+                        Duyuru Başlığı
+                      </label>
+                      <input
+                        type="text"
+                        value={settings.maintenanceTitle}
+                        onChange={(e) => setSettings({ ...settings, maintenanceTitle: e.target.value })}
+                        className="w-full px-4 py-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-white text-xs focus:outline-none focus:border-zinc-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
+                        Duyuru Mesajı
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={settings.maintenanceMessage}
+                        onChange={(e) => setSettings({ ...settings, maintenanceMessage: e.target.value })}
+                        className="w-full px-4 py-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-white text-xs focus:outline-none focus:border-zinc-500 resize-none"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* PAYTR ENTEGRASYONU */}
+              <div className="p-6 rounded-2xl border border-zinc-800 bg-zinc-950/70 mt-2">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                      <span>PayTR Sanal POS Entegrasyonu</span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                        3D Secure
+                      </span>
+                    </h3>
+                    <p className="text-xs text-zinc-400 mt-1">
+                      PayTR mağaza panelinizden aldığınız API anahtarlarınızı buraya girin.
+                    </p>
+                  </div>
+
+                  <Link
+                    href="/odeme"
+                    target="_blank"
+                    className="text-xs text-zinc-300 hover:text-white underline underline-offset-4"
+                  >
+                    Ödeme Sayfasını Aç ↗
+                  </Link>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-zinc-400 mb-1">
+                      Mağaza No (Merchant ID)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Örn: 123456"
+                      value={settings.paytrMerchantId}
+                      onChange={(e) => setSettings({ ...settings, paytrMerchantId: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-800 text-white text-xs focus:outline-none focus:border-zinc-500 font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-zinc-400 mb-1">
+                      Mağaza Parolası (Merchant Key)
+                    </label>
+                    <input
+                      type="password"
+                      placeholder="••••••••••••"
+                      value={settings.paytrMerchantKey}
+                      onChange={(e) => setSettings({ ...settings, paytrMerchantKey: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-800 text-white text-xs focus:outline-none focus:border-zinc-500 font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-zinc-400 mb-1">
+                      Mağaza Gizli Anahtar (Salt)
+                    </label>
+                    <input
+                      type="password"
+                      placeholder="••••••••••••"
+                      value={settings.paytrMerchantSalt}
+                      onChange={(e) => setSettings({ ...settings, paytrMerchantSalt: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-800 text-white text-xs focus:outline-none focus:border-zinc-500 font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 pt-3 mt-3 border-t border-zinc-800/80">
+                  <input
+                    type="checkbox"
+                    id="paytrTest"
+                    checked={settings.paytrTestMode}
+                    onChange={(e) => setSettings({ ...settings, paytrTestMode: e.target.checked })}
+                    className="rounded bg-zinc-900 border-zinc-700 text-white focus:ring-0"
+                  />
+                  <label htmlFor="paytrTest" className="text-xs text-zinc-300 font-medium">
+                    Test Modu (PayTR test kartları ile denemek için işaretleyin)
+                  </label>
+                </div>
+              </div>
+
               <div className="pt-4">
                 <button
                   type="submit"
                   className="px-8 py-3.5 rounded-full text-xs font-bold uppercase tracking-wider text-black bg-white hover:bg-zinc-200 transition-colors"
                 >
-                  Ayarları Kaydet
+                  Tüm Ayarları Kaydet
                 </button>
               </div>
             </form>
