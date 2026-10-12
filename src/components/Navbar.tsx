@@ -38,12 +38,17 @@ export default function Navbar({ settings }: NavbarProps) {
       <div className="max-w-7xl mx-auto px-6 md:px-12 flex items-center justify-between">
         {/* Brand Logo */}
         <Link href="/" className="group flex items-center gap-3">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/logo.png"
-            alt="İmperya Media Solutions"
-            className="h-8 sm:h-9 w-auto object-contain group-hover:scale-105 transition-transform duration-300"
-          />
+          <picture>
+            <source srcSet="/logo.webp, /logo-2x.webp 2x" type="image/webp" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo.png"
+              alt="İmperya Media Solutions"
+              width="180"
+              height="42"
+              className="h-8 sm:h-9 w-auto object-contain group-hover:scale-105 transition-transform duration-300"
+            />
+          </picture>
         </Link>
 
         {/* Desktop Navigation */}

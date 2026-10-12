@@ -83,12 +83,17 @@ export default function MaintenanceOverlay({ settings }: MaintenanceOverlayProps
       {/* Top Bar */}
       <div className="relative max-w-6xl w-full mx-auto flex items-center justify-between">
         <div className="flex items-center gap-3">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/logo.png"
-            alt="İmperya Media Solutions"
-            className="h-8 sm:h-9 w-auto object-contain"
-          />
+          <picture>
+            <source srcSet="/logo.webp, /logo-2x.webp 2x" type="image/webp" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo.png"
+              alt="İmperya Media Solutions"
+              width="180"
+              height="42"
+              className="h-8 sm:h-9 w-auto object-contain"
+            />
+          </picture>
         </div>
       </div>
 

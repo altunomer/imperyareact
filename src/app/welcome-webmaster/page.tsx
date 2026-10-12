@@ -209,10 +209,20 @@ export default function AdminPage() {
       <div className="min-h-screen bg-[#09090b] flex items-center justify-center p-6 text-white">
         <div className="w-full max-w-md p-8 rounded-3xl border border-zinc-800 bg-zinc-900/60 backdrop-blur-xl shadow-2xl">
           <div className="text-center mb-8">
-            <div className="w-14 h-14 rounded-2xl bg-white text-black font-black text-2xl flex items-center justify-center mx-auto mb-4">
-              İ
+            <div className="flex justify-center mb-6">
+              <picture>
+                <source srcSet="/logo.webp, /logo-2x.webp 2x" type="image/webp" />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/logo.png"
+                  alt="İmperya Media Solutions"
+                  width="180"
+                  height="42"
+                  className="h-10 w-auto object-contain"
+                />
+              </picture>
             </div>
-            <h1 className="text-2xl font-bold tracking-tight">İmperya Yönetim Paneli</h1>
+            <h1 className="text-2xl font-bold tracking-tight">Yönetim Paneli</h1>
             <p className="text-xs text-zinc-400 mt-1">Lütfen yönetici şifrenizi giriniz</p>
           </div>
 

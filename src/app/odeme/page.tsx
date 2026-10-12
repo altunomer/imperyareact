@@ -111,10 +111,20 @@ export default function PaymentPage() {
         </Link>
 
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center font-black text-black text-sm">
-            İ
-          </div>
-          <span className="font-bold text-sm tracking-tight text-white">İMPERYA ONLINE ÖDEME</span>
+          <picture>
+            <source srcSet="/logo.webp, /logo-2x.webp 2x" type="image/webp" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo.png"
+              alt="İmperya Media Solutions"
+              width="140"
+              height="33"
+              className="h-7 sm:h-8 w-auto object-contain"
+            />
+          </picture>
+          <span className="text-[11px] font-semibold text-zinc-400 border-l border-zinc-800 pl-3">
+            ONLINE ÖDEME
+          </span>
         </div>
       </div>
 

@@ -52,12 +52,17 @@ export default function Footer({ settings, services }: FooterProps) {
             {/* Brand info */}
             <div className="lg:col-span-4">
               <Link href="/" className="inline-flex items-center gap-3 mb-6">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/logo.png"
-                  alt="İmperya Media Solutions"
-                  className="h-9 w-auto object-contain"
-                />
+                <picture>
+                  <source srcSet="/logo.webp, /logo-2x.webp 2x" type="image/webp" />
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="/logo.png"
+                    alt="İmperya Media Solutions"
+                    width="200"
+                    height="47"
+                    className="h-9 sm:h-10 w-auto object-contain"
+                  />
+                </picture>
               </Link>
 
               <p className="text-zinc-400 text-sm leading-relaxed mb-6 max-w-sm">
