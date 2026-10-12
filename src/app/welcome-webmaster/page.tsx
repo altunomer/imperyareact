@@ -42,6 +42,7 @@ import {
 } from '@/lib/storage';
 import { initialServices, initialReferences, initialProjects, initialSettings } from '@/data/initialData';
 import { optimizeImageFile } from '@/lib/imageOptimizer';
+import { testPayTRCredentials } from '@/lib/paytr';
 
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -59,6 +60,32 @@ export default function AdminPage() {
   const [inquiries, setInquiries] = useState<ContactInquiry[]>([]);
 
   const [feedbackMessage, setFeedbackMessage] = useState('');
+  const [paytrTesting, setPaytrTesting] = useState(false);
+  const [paytrTestResult, setPaytrTestResult] = useState<{
+    success: boolean;
+    message: string;
+    sampleLink?: string;
+  } | null>(null);
+
+  const handleTestPayTR = async () => {
+    setPaytrTesting(true);
+    setPaytrTestResult(null);
+    try {
+      const res = await testPayTRCredentials(
+        settings.paytrMerchantId,
+        settings.paytrMerchantKey,
+        settings.paytrMerchantSalt
+      );
+      setPaytrTestResult(res);
+    } catch (e: any) {
+      setPaytrTestResult({
+        success: false,
+        message: e?.message || 'PayTR testi sırasında bir hata oluştu.',
+      });
+    } finally {
+      setPaytrTesting(false);
+    }
+  };
 
   // Modals / Editing state
   const [editingReference, setEditingReference] = useState<ReferenceItem | null>(null);
@@ -899,17 +926,56 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 pt-3 mt-3 border-t border-zinc-800/80">
-                  <input
-                    type="checkbox"
-                    id="paytrTest"
-                    checked={settings.paytrTestMode}
-                    onChange={(e) => setSettings({ ...settings, paytrTestMode: e.target.checked })}
-                    className="rounded bg-zinc-900 border-zinc-700 text-white focus:ring-0"
-                  />
-                  <label htmlFor="paytrTest" className="text-xs text-zinc-300 font-medium">
-                    Test Modu (PayTR test kartları ile denemek için işaretleyin)
-                  </label>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 mt-3 border-t border-zinc-800/80">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="paytrTest"
+                      checked={settings.paytrTestMode}
+                      onChange={(e) => setSettings({ ...settings, paytrTestMode: e.target.checked })}
+                      className="rounded bg-zinc-900 border-zinc-700 text-white focus:ring-0"
+                    />
+                    <label htmlFor="paytrTest" className="text-xs text-zinc-300 font-medium">
+                      Test Modu (PayTR test kartları ile denemek için işaretleyin)
+                    </label>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleTestPayTR}
+                    disabled={paytrTesting}
+                    className="px-4 py-2 rounded-xl text-xs font-bold text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    {paytrTesting ? 'Doğrulanıyor...' : '⚡ PayTR Bağlantısını Canlı Test Et'}
+                  </button>
+                </div>
+
+                {paytrTestResult && (
+                  <div
+                    className={`mt-4 p-4 rounded-xl text-xs flex items-start gap-2.5 ${
+                      paytrTestResult.success
+                        ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-300'
+                        : 'bg-red-500/10 border border-red-500/30 text-red-300'
+                    }`}
+                  >
+                    <div className="shrink-0 mt-0.5 font-bold">
+                      {paytrTestResult.success ? '✅' : '❌'}
+                    </div>
+                    <div className="space-y-1">
+                      <p className="font-semibold">{paytrTestResult.message}</p>
+                      {paytrTestResult.sampleLink && (
+                        <p className="text-[11px] text-zinc-400 truncate max-w-lg">
+                          Oluşturulan Örnek Bağlantı: <span className="text-emerald-400 underline">{paytrTestResult.sampleLink}</span>
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                <div className="mt-4 p-4 rounded-xl bg-zinc-900/60 border border-zinc-800 text-[11px] text-zinc-400 space-y-1">
+                  <div className="font-semibold text-zinc-300">💡 PayTR Panel Kurulum Notu:</div>
+                  <p>1. Mağaza No, Parola ve Salt bilgilerinizi PayTR Mağaza Paneli &gt; <strong>Ayarlar &gt; Bilgi</strong> sekmesinden kopyalayabilirsiniz.</p>
+                  <p>2. Bildirim URL (Callback URL) alanına: <code className="text-white bg-zinc-950 px-1.5 py-0.5 rounded font-mono">https://imperyamediasolutions.com/api/paytr/callback</code> yazmalısınız.</p>
                 </div>
               </div>
 

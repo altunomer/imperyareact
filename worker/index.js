@@ -193,76 +193,88 @@ export default {
         }
       }
 
-      // /api/paytr/create-token
-      if (url.pathname === '/api/paytr/create-token') {
+      // Helper for Web Crypto HMAC SHA-256
+      const computeHmacSha256 = async (dataStr, keyStr) => {
+        const enc = new TextEncoder();
+        const key = await crypto.subtle.importKey(
+          'raw',
+          enc.encode(keyStr),
+          { name: 'HMAC', hash: 'SHA-256' },
+          false,
+          ['sign']
+        );
+        const signature = await crypto.subtle.sign('HMAC', key, enc.encode(dataStr));
+        let binary = '';
+        const bytes = new Uint8Array(signature);
+        for (let i = 0; i < bytes.byteLength; i++) {
+          binary += String.fromCharCode(bytes[i]);
+        }
+        return btoa(binary);
+      };
+
+      // /api/paytr/create-link (and alias /api/paytr/create-token)
+      if (url.pathname === '/api/paytr/create-link' || url.pathname === '/api/paytr/create-token') {
         if (request.method === 'POST') {
           try {
             const body = await request.json();
-            const { name, email, phone, amount, description } = body;
 
-            // Load merchant settings from storage
+            // Load merchant settings from KV storage or request payload
             const settingsRaw = storage ? await storage.get('settings') : null;
             const settings = settingsRaw ? JSON.parse(settingsRaw) : {};
 
-            const merchantId = settings.paytrMerchantId || env.PAYTR_MERCHANT_ID;
-            const merchantKey = settings.paytrMerchantKey || env.PAYTR_MERCHANT_KEY;
-            const merchantSalt = settings.paytrMerchantSalt || env.PAYTR_MERCHANT_SALT;
-            const testMode = settings.paytrTestMode ? '1' : '0';
+            const merchantId = body.merchant_id || settings.paytrMerchantId || env.PAYTR_MERCHANT_ID;
+            const merchantKey = body.merchant_key || settings.paytrMerchantKey || env.PAYTR_MERCHANT_KEY;
+            const merchantSalt = body.merchant_salt || settings.paytrMerchantSalt || env.PAYTR_MERCHANT_SALT;
 
             if (!merchantId || !merchantKey || !merchantSalt) {
               return new Response(JSON.stringify({
-                simulated: true,
-                message: 'PayTR bilgileri henüz girilmedi, test simülasyonu çalışıyor.'
+                status: 'failed',
+                reason: 'PayTR API bilgileri (Mağaza No, Parola, Salt) henüz girilmemiş. Lütfen /welcome-webmaster panelinden bilgilerinizi kaydedin.'
               }), {
+                status: 400,
                 headers: { 'Content-Type': 'application/json', ...corsHeaders },
               });
             }
 
-            const merchantOid = 'IMP' + Date.now();
-            const userIp = request.headers.get('CF-Connecting-IP') || '127.0.0.1';
-            const paymentAmount = Math.round(Number(amount) * 100); // Kuruş cinsinden
-            const userBasket = JSON.stringify([[description || 'Hizmet Bedeli', String(amount), 1]]);
-            const noInstallment = '0';
-            const maxInstallment = '12';
-            const currency = 'TL';
-            const merchantOkUrl = new URL('/odeme?status=success', request.url).toString();
-            const merchantFailUrl = new URL('/odeme?status=fail', request.url).toString();
+            let name = (body.name || body.description || 'İmperya Media - Hizmet Bedeli').trim();
+            if (name.length < 4) name = `İmperya Media - ${name || 'Hizmet Bedeli'}`;
+            if (name.length > 200) name = name.slice(0, 200);
 
-            // Hash calculation: merchant_id + user_ip + merchant_oid + email + payment_amount + user_basket + no_installment + max_installment + currency + test_mode + merchant_salt
-            const hashStr = `${merchantId}${userIp}${merchantOid}${email}${paymentAmount}${userBasket}${noInstallment}${maxInstallment}${currency}${testMode}${merchantSalt}`;
+            const price = Math.round(Number(body.amount) * 100); // Kuruş integer
+            const currency = body.currency || 'TL';
+            const maxInstallment = body.max_installment ? String(body.max_installment) : '12';
+            const linkType = 'collection'; // Tahsilat modu
+            const lang = body.lang || 'tr';
+            const email = (body.email || 'musteri@imperyamediasolutions.com').trim();
+            const minCount = '';
+            const maxCount = '1';
+            const callbackId = body.callback_id || `IMP_${Date.now()}`;
+            const callbackLink = body.callback_link || `${url.origin}/api/paytr/callback`;
+            const debugOn = '1';
 
-            const enc = new TextEncoder();
-            const key = await crypto.subtle.importKey(
-              'raw',
-              enc.encode(merchantKey),
-              { name: 'HMAC', hash: 'SHA-256' },
-              false,
-              ['sign']
-            );
-            const signature = await crypto.subtle.sign('HMAC', key, enc.encode(hashStr));
-            const paytrTokenHash = btoa(String.fromCharCode(...new Uint8Array(signature)));
+            // PayTR Dokümantasyon İmzası:
+            // required = name + price + currency + max_installment + link_type + lang + email;
+            const required = `${name}${price}${currency}${maxInstallment}${linkType}${lang}${email}`;
+            const paytrToken = await computeHmacSha256(required + merchantSalt, merchantKey);
 
             const postParams = new URLSearchParams({
               merchant_id: merchantId,
-              user_ip: userIp,
-              merchant_oid: merchantOid,
-              email: email,
-              payment_amount: String(paymentAmount),
-              paytr_token: paytrTokenHash,
-              user_basket: userBasket,
-              user_name: name,
-              user_address: settings.address || 'Kayseri',
-              user_phone: phone,
-              merchant_ok_url: merchantOkUrl,
-              merchant_fail_url: merchantFailUrl,
-              timeout_limit: '30',
+              name: name,
+              price: String(price),
               currency: currency,
-              test_mode: testMode,
-              no_installment: noInstallment,
               max_installment: maxInstallment,
+              link_type: linkType,
+              lang: lang,
+              min_count: minCount,
+              email: email,
+              max_count: maxCount,
+              callback_link: callbackLink,
+              callback_id: callbackId,
+              debug_on: debugOn,
+              paytr_token: paytrToken,
             });
 
-            const paytrRes = await fetch('https://www.paytr.com/odeme/api/get-token', {
+            const paytrRes = await fetch('https://www.paytr.com/odeme/api/link/create', {
               method: 'POST',
               headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
               body: postParams.toString(),
@@ -273,7 +285,7 @@ export default {
               headers: { 'Content-Type': 'application/json', ...corsHeaders },
             });
           } catch (e) {
-            return new Response(JSON.stringify({ error: e.message }), {
+            return new Response(JSON.stringify({ status: 'failed', reason: e.message }), {
               status: 400,
               headers: { 'Content-Type': 'application/json', ...corsHeaders },
             });
@@ -281,11 +293,95 @@ export default {
         }
       }
 
-      // /api/paytr/callback
+      // /api/paytr/delete-link
+      if (url.pathname === '/api/paytr/delete-link') {
+        if (request.method === 'POST') {
+          try {
+            const body = await request.json();
+            const settingsRaw = storage ? await storage.get('settings') : null;
+            const settings = settingsRaw ? JSON.parse(settingsRaw) : {};
+
+            const merchantId = body.merchant_id || settings.paytrMerchantId || env.PAYTR_MERCHANT_ID;
+            const merchantKey = body.merchant_key || settings.paytrMerchantKey || env.PAYTR_MERCHANT_KEY;
+            const merchantSalt = body.merchant_salt || settings.paytrMerchantSalt || env.PAYTR_MERCHANT_SALT;
+
+            const id = body.id;
+            const signStr = `${id}${merchantId}${merchantSalt}`;
+            const paytrToken = await computeHmacSha256(signStr, merchantKey);
+
+            const postParams = new URLSearchParams({
+              merchant_id: merchantId,
+              id: id,
+              debug_on: '1',
+              paytr_token: paytrToken,
+            });
+
+            const paytrRes = await fetch('https://www.paytr.com/odeme/api/link/delete', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+              body: postParams.toString(),
+            });
+
+            const paytrData = await paytrRes.json();
+            return new Response(JSON.stringify(paytrData), {
+              headers: { 'Content-Type': 'application/json', ...corsHeaders },
+            });
+          } catch (e) {
+            return new Response(JSON.stringify({ status: 'failed', reason: e.message }), {
+              status: 400,
+              headers: { 'Content-Type': 'application/json', ...corsHeaders },
+            });
+          }
+        }
+      }
+
+      // /api/paytr/callback (PayTR Webhook Bildirimi)
       if (url.pathname === '/api/paytr/callback') {
         if (request.method === 'POST') {
-          // PayTR notification callback returns OK
-          return new Response('OK', { headers: corsHeaders });
+          try {
+            const formData = await request.formData();
+            const post = Object.fromEntries(formData.entries());
+
+            const settingsRaw = storage ? await storage.get('settings') : null;
+            const settings = settingsRaw ? JSON.parse(settingsRaw) : {};
+            const merchantKey = settings.paytrMerchantKey || env.PAYTR_MERCHANT_KEY;
+            const merchantSalt = settings.paytrMerchantSalt || env.PAYTR_MERCHANT_SALT;
+
+            if (merchantKey && merchantSalt && post.hash) {
+              const hashStr = `${post.callback_id || ''}${post.merchant_oid || ''}${merchantSalt}${post.status || ''}${post.total_amount || ''}`;
+              const expectedHash = await computeHmacSha256(hashStr, merchantKey);
+              if (expectedHash !== post.hash) {
+                return new Response('PAYTR notification failed: bad hash', { status: 400 });
+              }
+            }
+
+            if (post.status === 'success' && storage) {
+              const raw = await storage.get('transactions');
+              const txs = raw ? JSON.parse(raw) : [];
+              txs.unshift({
+                id: post.callback_id || String(Date.now()),
+                merchantOid: post.merchant_oid || '',
+                amount: post.total_amount ? Number(post.total_amount) / 100 : 0,
+                status: 'success',
+                date: new Date().toISOString(),
+              });
+              await storage.put('transactions', JSON.stringify(txs.slice(0, 100)));
+            }
+
+            return new Response('OK');
+          } catch {
+            return new Response('OK');
+          }
+        }
+      }
+
+      // /api/paytr/transactions
+      if (url.pathname === '/api/paytr/transactions') {
+        if (request.method === 'GET') {
+          const raw = storage ? await storage.get('transactions') : null;
+          return new Response(raw || '[]', {
+            headers: { 'Content-Type': 'application/json', ...corsHeaders },
+          });
         }
       }
 

@@ -1,23 +1,29 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import {
-  ShieldCheck,
   CreditCard,
   Lock,
   ArrowLeft,
   CheckCircle2,
   AlertCircle,
-  HelpCircle,
   ArrowRight,
+  ExternalLink,
+  ShieldCheck,
+  RefreshCw,
 } from 'lucide-react';
 import { SiteSettings } from '@/types';
 import { getSettings } from '@/lib/storage';
 import { initialSettings } from '@/data/initialData';
+import { requestPayTRLink } from '@/lib/paytr';
 import LegalModals, { LegalDocType } from '@/components/LegalModals';
 
-export default function PaymentPage() {
+function PaymentContent() {
+  const searchParams = useSearchParams();
+  const urlStatus = searchParams.get('status');
+
   const [settings, setSettings] = useState<SiteSettings>(initialSettings);
   const [activeLegalModal, setActiveLegalModal] = useState<LegalDocType>(null);
 
@@ -31,13 +37,16 @@ export default function PaymentPage() {
   });
 
   const [isProcessing, setIsProcessing] = useState(false);
-  const [paymentStep, setPaymentStep] = useState<'form' | 'iframe' | 'success'>('form');
+  const [paymentStep, setPaymentStep] = useState<'form' | 'paytr' | 'success'>('form');
   const [errorMessage, setErrorMessage] = useState('');
-  const [iframeToken, setIframeToken] = useState<string | null>(null);
+  const [paytrLink, setPaytrLink] = useState<string | null>(null);
 
   useEffect(() => {
     getSettings().then(setSettings);
-  }, []);
+    if (urlStatus === 'success') {
+      setPaymentStep('success');
+    }
+  }, [urlStatus]);
 
   const handleStartPayment = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,48 +63,57 @@ export default function PaymentPage() {
       return;
     }
 
+    if (!formData.name.trim() || formData.name.trim().length < 3) {
+      setErrorMessage('Lütfen adınızı ve soyadınızı eksiksiz giriniz.');
+      return;
+    }
+
+    if (!formData.email.trim() || !formData.email.includes('@')) {
+      setErrorMessage('Lütfen geçerli bir e-posta adresi giriniz.');
+      return;
+    }
+
     setIsProcessing(true);
 
     try {
-      // Send payment token request to API
-      const res = await fetch('/api/paytr/create-token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: formData.name,
-          phone: formData.phone,
-          email: formData.email,
-          description: formData.serviceDescription || 'Medya Hizmet Bedeli',
-          amount: numericAmount,
-        }),
+      const merchantId = settings.paytrMerchantId?.trim();
+      const merchantKey = settings.paytrMerchantKey?.trim();
+      const merchantSalt = settings.paytrMerchantSalt?.trim();
+
+      if (!merchantId || !merchantKey || !merchantSalt) {
+        setErrorMessage(
+          'PayTR API bilgileri (Mağaza No, Parola, Salt) henüz sisteme kaydedilmemiş. Lütfen yönetim paneli (/welcome-webmaster) > Ayarlar sekmesinden PayTR bilgilerinizi giriniz.'
+        );
+        setIsProcessing(false);
+        return;
+      }
+
+      const result = await requestPayTRLink({
+        merchantId,
+        merchantKey,
+        merchantSalt,
+        name: formData.serviceDescription?.trim()
+          ? `İmperya Media - ${formData.serviceDescription.trim()}`
+          : `İmperya Media - ${formData.name.trim()}`,
+        amount: numericAmount,
+        email: formData.email.trim(),
+        phone: formData.phone.trim(),
+        currency: 'TL',
+        maxInstallment: '12',
       });
 
-      const data = await res.json();
-
-      if (data && data.token) {
-        setIframeToken(data.token);
-        setPaymentStep('iframe');
+      if (result.status === 'success' && result.link) {
+        setPaytrLink(result.link);
+        setPaymentStep('paytr');
       } else {
-        // If PayTR keys are not yet configured in admin, provide a helpful message or sandbox simulation
-        if (settings.paytrMerchantId) {
-          setErrorMessage(data?.error || 'PayTR token oluşturulamadı. Lütfen bilgilerinizi kontrol edin.');
-        } else {
-          // Simulation mode when API keys are not yet configured
-          setTimeout(() => {
-            setPaymentStep('iframe');
-          }, 800);
-        }
+        const errorDetail = result.reason || result.error || 'PayTR ödeme bağlantısı oluşturulamadı.';
+        setErrorMessage(`PayTR Hatası: ${errorDetail}`);
       }
-    } catch {
-      // In static or test mode, proceed to payment container
-      setPaymentStep('iframe');
+    } catch (err: any) {
+      setErrorMessage(`Bağlantı hatası: ${err?.message || 'Lütfen internet bağlantınızı kontrol edin.'}`);
     } finally {
       setIsProcessing(false);
     }
-  };
-
-  const handleSimulateSuccess = () => {
-    setPaymentStep('success');
   };
 
   return (
@@ -129,7 +147,7 @@ export default function PaymentPage() {
       </div>
 
       {/* Main Content Area */}
-      <div className="max-w-2xl w-full mx-auto py-12 flex-grow flex flex-col justify-center">
+      <div className="max-w-3xl w-full mx-auto py-10 flex-grow flex flex-col justify-center">
         {/* STEP 1: PAYMENT FORM */}
         {paymentStep === 'form' && (
           <div className="p-8 sm:p-10 rounded-3xl border border-zinc-800 bg-zinc-900/40 backdrop-blur-md shadow-2xl">
@@ -146,13 +164,13 @@ export default function PaymentPage() {
             </div>
 
             <p className="text-xs text-zinc-400 leading-relaxed mb-8">
-              Ajansımızdan aldığınız prodüksiyon, sosyal medya, yazılım veya danışmanlık hizmetlerine ait ödemelerinizi PayTR altyapısıyla kredi veya banka kartınızla güvenle gerçekleştirebilirsiniz.
+              Ajansımızdan aldığınız prodüksiyon, sosyal medya, yazılım veya danışmanlık hizmetlerine ait ödemelerinizi resmi PayTR altyapısıyla kredi veya banka kartınızla güvenle gerçekleştirebilirsiniz.
             </p>
 
             {errorMessage && (
-              <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs mb-6 flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <span>{errorMessage}</span>
+              <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs mb-6 flex items-start gap-2.5">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <div className="leading-relaxed">{errorMessage}</div>
               </div>
             )}
 
@@ -190,7 +208,7 @@ export default function PaymentPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
-                    E-Posta Adresiniz *
+                    E-Posta Adresiniz (Dekont için) *
                   </label>
                   <input
                     type="email"
@@ -227,7 +245,7 @@ export default function PaymentPage() {
                 </label>
                 <input
                   type="text"
-                  placeholder="Örn: Sosyal Medya Yönetimi veya Fatura No"
+                  placeholder="Örn: Sosyal Medya Yönetimi ve Prodüksiyon Bedeli"
                   value={formData.serviceDescription}
                   onChange={(e) =>
                     setFormData({ ...formData, serviceDescription: e.target.value })
@@ -251,7 +269,7 @@ export default function PaymentPage() {
                   <button
                     type="button"
                     onClick={() => setActiveLegalModal('mesafeli')}
-                    className="text-white underline hover:text-zinc-200 mr-1"
+                    className="text-white underline hover:text-zinc-200 mr-1 font-semibold"
                   >
                     Mesafeli Satış Sözleşmesi
                   </button>
@@ -259,7 +277,7 @@ export default function PaymentPage() {
                   <button
                     type="button"
                     onClick={() => setActiveLegalModal('iade')}
-                    className="text-white underline hover:text-zinc-200 mx-1"
+                    className="text-white underline hover:text-zinc-200 mx-1 font-semibold"
                   >
                     İptal ve İade Koşulları
                   </button>
@@ -273,7 +291,10 @@ export default function PaymentPage() {
                 className="w-full py-4 rounded-full text-xs font-bold uppercase tracking-wider text-black bg-white hover:bg-zinc-200 transition-all shadow-xl hover:scale-[1.01] mt-4 flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 {isProcessing ? (
-                  <span>Ödeme Sayfası Hazırlanıyor...</span>
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <span>PayTR Güvenli Ödeme Ekranı Hazırlanıyor...</span>
+                  </>
                 ) : (
                   <>
                     <span>Kartla Güvenli Ödemeye Geç</span>
@@ -291,74 +312,63 @@ export default function PaymentPage() {
               <span>•</span>
               <span className="font-semibold text-zinc-400">3D Secure Doğrulama</span>
               <span>•</span>
-              <span className="font-semibold text-zinc-400">Visa / Mastercard / Troy</span>
+              <span className="font-semibold text-zinc-400">Tüm Banka & Kredi Kartları</span>
             </div>
           </div>
         )}
 
-        {/* STEP 2: PAYTR IFRAME DISPLAY */}
-        {paymentStep === 'iframe' && (
-          <div className="p-8 rounded-3xl border border-zinc-800 bg-zinc-900/60 backdrop-blur-md shadow-2xl">
-            <div className="flex items-center justify-between mb-6 pb-4 border-b border-zinc-800">
+        {/* STEP 2: REAL PAYTR LINK PAYMENT SCREEN */}
+        {paymentStep === 'paytr' && paytrLink && (
+          <div className="space-y-6">
+            <div className="p-6 rounded-3xl border border-zinc-800 bg-zinc-900/60 backdrop-blur-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">
-                  PayTR Güvenli Ödeme Ekranı
+                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  PayTR 3D Secure Güvenli Ödeme
                 </span>
-                <h3 className="text-lg font-bold text-white">
-                  Tutar: {parseFloat(formData.amount).toLocaleString('tr-TR')} ₺
+                <h3 className="text-xl font-bold text-white mt-1">
+                  Ödenecek Tutar: {parseFloat(formData.amount).toLocaleString('tr-TR')} ₺
                 </h3>
+                <p className="text-xs text-zinc-400 mt-0.5">
+                  Müşteri: {formData.name} • {formData.email}
+                </p>
               </div>
 
-              <button
-                onClick={() => setPaymentStep('form')}
-                className="text-xs text-zinc-400 hover:text-white"
-              >
-                Geri Dön
-              </button>
+              <div className="flex items-center gap-3 w-full sm:w-auto">
+                <button
+                  onClick={() => setPaymentStep('form')}
+                  className="px-4 py-2.5 rounded-full text-xs font-semibold text-zinc-400 hover:text-white border border-zinc-800 hover:border-zinc-700 transition-colors"
+                >
+                  ← Formu Düzenle
+                </button>
+                <a
+                  href={paytrLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider text-black bg-emerald-400 hover:bg-emerald-300 transition-all flex items-center gap-2 shadow-lg"
+                >
+                  <span>PayTR Ekranını Yeni Sekmede Aç</span>
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              </div>
             </div>
 
-            {iframeToken ? (
+            {/* Embedded Official PayTR Frame */}
+            <div className="w-full bg-white rounded-3xl overflow-hidden border border-zinc-800 shadow-2xl relative">
               <iframe
-                src={`https://www.paytr.com/odeme/guvenli/${iframeToken}`}
+                src={paytrLink}
                 id="paytriframe"
                 frameBorder="0"
-                scrolling="no"
-                className="w-full min-h-[500px] rounded-xl"
+                scrolling="auto"
+                className="w-full min-h-[680px] sm:min-h-[720px] rounded-3xl"
+                title="PayTR Güvenli Ödeme Ekranı"
+                allow="payment; camera; microphone"
               />
-            ) : (
-              // Live Simulation / Sandbox placeholder when API keys are being connected
-              <div className="py-12 px-4 text-center flex flex-col items-center">
-                <div className="w-16 h-16 rounded-2xl bg-zinc-800/80 border border-zinc-700 flex items-center justify-center text-white mb-6">
-                  <CreditCard className="w-8 h-8 text-emerald-400" />
-                </div>
-                <h4 className="text-xl font-bold text-white mb-2">PayTR Entegrasyon Alanı</h4>
-                <p className="text-xs text-zinc-400 max-w-md leading-relaxed mb-8">
-                  PayTR onayınız tamamlandığında, panelden gireceğiniz API anahtarlarınız ile 3D Secure kart formu bu alanda doğrudan açılacaktır.
-                </p>
+            </div>
 
-                <div className="p-4 rounded-xl bg-zinc-950 border border-zinc-800 text-left w-full max-w-sm mb-6 text-xs text-zinc-300 space-y-1.5">
-                  <div className="flex justify-between">
-                    <span className="text-zinc-500">Müşteri:</span>
-                    <span className="font-semibold">{formData.name}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-zinc-500">Tutar:</span>
-                    <span className="font-bold text-emerald-400">{formData.amount} ₺</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-zinc-500">Açıklama:</span>
-                    <span>{formData.serviceDescription || 'Medya Hizmeti'}</span>
-                  </div>
-                </div>
-
-                <button
-                  onClick={handleSimulateSuccess}
-                  className="px-6 py-3 rounded-full text-xs font-bold uppercase tracking-wider text-black bg-white hover:bg-zinc-200 transition-colors"
-                >
-                  Ödemeyi Tamamla (Test Simülasyonu)
-                </button>
-              </div>
-            )}
+            <div className="p-4 rounded-2xl bg-zinc-950 border border-zinc-800/80 text-center text-xs text-zinc-400">
+              Kart bilgileriniz doğrudan <strong className="text-zinc-200">BDDK Lisanslı PayTR</strong> güvenli altyapısına iletilir ve sunucularımızda saklanmaz. Ödemeniz 3D Secure SMS şifrenizle onaylandıktan sonra anında işleme alınır.
+            </div>
           </div>
         )}
 
@@ -371,7 +381,7 @@ export default function PaymentPage() {
 
             <h2 className="text-2xl font-bold text-white mb-2">Ödemeniz Başarıyla Alındı!</h2>
             <p className="text-xs text-zinc-400 max-w-md leading-relaxed mb-8">
-              Ödeme dekontu ve bilgilendirme detayları <strong className="text-zinc-200">{formData.email}</strong> adresinize iletilmiştir. İmperya Media Solutions'ı tercih ettiğiniz için teşekkür ederiz.
+              Ödemeniz PayTR altyapısı üzerinden 3D Secure onayıyla başarıyla tamamlanmıştır. İmperya Media Solutions'ı tercih ettiğiniz için teşekkür ederiz.
             </p>
 
             <Link
@@ -397,5 +407,13 @@ export default function PaymentPage() {
       {/* Render Legal Modal if clicked */}
       {activeLegalModal && <LegalModals settings={settings} />}
     </div>
+  );
+}
+
+export default function PaymentPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#09090b] text-white flex items-center justify-center">Yükleniyor...</div>}>
+      <PaymentContent />
+    </Suspense>
   );
 }
