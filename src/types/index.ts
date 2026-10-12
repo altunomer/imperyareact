@@ -1,0 +1,60 @@
+export interface ServiceItem {
+  id: string;
+  slug: string;
+  title: string;
+  shortDesc: string;
+  detailedDesc: string;
+  icon: string;
+  tags: string[];
+  order: number;
+  active: boolean;
+}
+
+export interface ReferenceItem {
+  id: string;
+  name: string;
+  category: string;
+  logoText?: string;
+  logoUrl?: string;
+  websiteUrl?: string;
+  order: number;
+  active: boolean;
+}
+
+export interface ProjectItem {
+  id: string;
+  slug: string;
+  title: string;
+  client: string;
+  category: string;
+  year: string;
+  coverImage: string;
+  summary: string;
+  tags: string[];
+  featured: boolean;
+  order: number;
+}
+
+export interface SiteSettings {
+  siteName: string;
+  title: string;
+  tagline: string;
+  phone: string;
+  whatsapp: string;
+  email: string;
+  address: string;
+  mapsUrl: string;
+  instagram: string;
+  linkedin: string;
+  youtube: string;
+}
+
+export interface ContactInquiry {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  service: string;
+  message: string;
+  createdAt: string;
+}
