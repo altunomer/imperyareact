@@ -17,7 +17,7 @@ import {
 import { SiteSettings } from '@/types';
 import { getSettings } from '@/lib/storage';
 import { initialSettings } from '@/data/initialData';
-import { requestPayTRLink } from '@/lib/paytr';
+import { requestPayTRLink, deletePayTRLink } from '@/lib/paytr';
 import LegalModals, { LegalDocType } from '@/components/LegalModals';
 
 function PaymentContent() {
@@ -40,6 +40,21 @@ function PaymentContent() {
   const [paymentStep, setPaymentStep] = useState<'form' | 'paytr' | 'success'>('form');
   const [errorMessage, setErrorMessage] = useState('');
   const [paytrLink, setPaytrLink] = useState<string | null>(null);
+  const [paytrLinkId, setPaytrLinkId] = useState<string | null>(null);
+
+  const handleEditForm = () => {
+    if (paytrLinkId && settings.paytrMerchantId) {
+      deletePayTRLink(
+        paytrLinkId,
+        settings.paytrMerchantId,
+        settings.paytrMerchantKey,
+        settings.paytrMerchantSalt
+      ).catch(() => {});
+    }
+    setPaytrLink(null);
+    setPaytrLinkId(null);
+    setPaymentStep('form');
+  };
 
   useEffect(() => {
     getSettings().then(setSettings);
@@ -88,13 +103,23 @@ function PaymentContent() {
         return;
       }
 
+      // Önceki denemeden kalan aktif bir link varsa PayTR'den temizle
+      if (paytrLinkId && merchantId && merchantKey && merchantSalt) {
+        deletePayTRLink(paytrLinkId, merchantId, merchantKey, merchantSalt).catch(() => {});
+      }
+      setPaytrLink(null);
+      setPaytrLinkId(null);
+
+      // Her link oluşturulduğunda PayTR'nin eski linki yeniden döndürmesini önleyen benzersiz sipariş etiketi
+      const sessionTag = Math.floor(1000 + Math.random() * 9000);
+      const rawTitle = formData.serviceDescription?.trim() || formData.name.trim();
+      const uniqueName = `İmperya - ${rawTitle} (#${sessionTag})`.slice(0, 200);
+
       const result = await requestPayTRLink({
         merchantId,
         merchantKey,
         merchantSalt,
-        name: formData.serviceDescription?.trim()
-          ? `İmperya Media - ${formData.serviceDescription.trim()}`
-          : `İmperya Media - ${formData.name.trim()}`,
+        name: uniqueName,
         amount: numericAmount,
         email: formData.email.trim(),
         phone: formData.phone.trim(),
@@ -104,6 +129,7 @@ function PaymentContent() {
 
       if (result.status === 'success' && result.link) {
         setPaytrLink(result.link);
+        setPaytrLinkId(result.id || null);
         setPaymentStep('paytr');
       } else {
         const errorDetail = result.reason || result.error || 'PayTR ödeme bağlantısı oluşturulamadı.';
@@ -340,7 +366,7 @@ function PaymentContent() {
 
               <div className="flex items-center gap-3 w-full sm:w-auto">
                 <button
-                  onClick={() => setPaymentStep('form')}
+                  onClick={handleEditForm}
                   className="px-4 py-2.5 rounded-full text-xs font-semibold text-zinc-400 hover:text-white border border-zinc-800 hover:border-zinc-700 transition-colors"
                 >
                   ← Formu Düzenle
@@ -360,6 +386,7 @@ function PaymentContent() {
             {/* Embedded Official PayTR Frame */}
             <div className="w-full bg-white rounded-3xl overflow-hidden border border-zinc-800 shadow-2xl relative">
               <iframe
+                key={paytrLink}
                 src={paytrLink}
                 id="paytriframe"
                 frameBorder="0"

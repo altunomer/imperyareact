@@ -214,6 +214,23 @@ export async function deletePayTRLink(
   merchantSalt: string
 ): Promise<{ status: string; reason?: string }> {
   try {
+    const apiRes = await fetch('/api/paytr/delete-link', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: linkId,
+        merchant_id: merchantId,
+        merchant_key: merchantKey,
+        merchant_salt: merchantSalt,
+      }),
+    });
+    if (apiRes.ok) {
+      const data = await apiRes.json();
+      return data;
+    }
+  } catch {}
+
+  try {
     const enc = new TextEncoder();
     const key = await crypto.subtle.importKey(
       'raw',
