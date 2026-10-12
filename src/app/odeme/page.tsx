@@ -147,7 +147,11 @@ function PaymentContent() {
       </div>
 
       {/* Main Content Area */}
-      <div className="max-w-3xl w-full mx-auto py-10 flex-grow flex flex-col justify-center">
+      <div
+        className={`w-full mx-auto py-10 flex-grow flex flex-col justify-center transition-all duration-300 ${
+          paymentStep === 'paytr' ? 'max-w-4xl' : 'max-w-2xl'
+        }`}
+      >
         {/* STEP 1: PAYMENT FORM */}
         {paymentStep === 'form' && (
           <div className="p-8 sm:p-10 rounded-3xl border border-zinc-800 bg-zinc-900/40 backdrop-blur-md shadow-2xl">
@@ -359,8 +363,8 @@ function PaymentContent() {
                 src={paytrLink}
                 id="paytriframe"
                 frameBorder="0"
-                scrolling="auto"
-                className="w-full min-h-[680px] sm:min-h-[720px] rounded-3xl"
+                scrolling="no"
+                className="w-full h-[920px] sm:h-[960px] min-h-[900px] rounded-3xl border-0 block"
                 title="PayTR Güvenli Ödeme Ekranı"
                 allow="payment; camera; microphone"
               />
