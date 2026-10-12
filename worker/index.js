@@ -248,14 +248,27 @@ export default {
             const email = (body.email || 'musteri@imperyamediasolutions.com').trim();
             const minCount = '';
             const maxCount = '1';
-            const callbackId = body.callback_id || `IMP_${Date.now()}`;
-            const callbackLink = body.callback_link || `${url.origin}/api/paytr/callback`;
             const debugOn = '1';
 
             // PayTR Dokümantasyon İmzası:
             // required = name + price + currency + max_installment + link_type + lang + email;
             const required = `${name}${price}${currency}${maxInstallment}${linkType}${lang}${email}`;
             const paytrToken = await computeHmacSha256(required + merchantSalt, merchantKey);
+
+            // PayTR Kuralları:
+            // 1) callback_link en fazla 400 karakter, http/https ile başlamalı, localhost olmamalı ve port (:3000 vb.) içermemelidir.
+            // 2) callback_id en fazla 64 karakter ve KESİNLİKLE alfanümerik olmalıdır (alt çizgi, tire vb. yasaktır).
+            // 3) Opsiyonel alanlardır. Eğer geçerli bir canlı domain yoksa boş geçilmelidir.
+            let callbackLink = '';
+            let callbackId = '';
+
+            if (body.callback_link && !body.callback_link.includes('localhost') && !body.callback_link.includes(':')) {
+              callbackLink = body.callback_link;
+              callbackId = (body.callback_id || `IMP${Date.now()}`).replace(/[^a-zA-Z0-9]/g, '');
+            } else if (url.hostname !== 'localhost' && !url.host.includes(':') && url.protocol.startsWith('http')) {
+              callbackLink = `${url.origin}/api/paytr/callback`;
+              callbackId = (body.callback_id || `IMP${Date.now()}`).replace(/[^a-zA-Z0-9]/g, '');
+            }
 
             const postParams = new URLSearchParams({
               merchant_id: merchantId,
@@ -268,11 +281,14 @@ export default {
               min_count: minCount,
               email: email,
               max_count: maxCount,
-              callback_link: callbackLink,
-              callback_id: callbackId,
               debug_on: debugOn,
               paytr_token: paytrToken,
             });
+
+            if (callbackLink && callbackId) {
+              postParams.append('callback_link', callbackLink);
+              postParams.append('callback_id', callbackId);
+            }
 
             const paytrRes = await fetch('https://www.paytr.com/odeme/api/link/create', {
               method: 'POST',

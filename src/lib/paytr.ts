@@ -134,8 +134,26 @@ export async function requestPayTRLink(params: PayTRLinkParams): Promise<PayTRLi
     const linkType = 'collection';
     const lang = 'tr';
     const email = params.email.trim();
-    const callbackId = params.callbackId || `IMP_${Date.now()}`;
-    const callbackLink = params.callbackUrl || (typeof window !== 'undefined' ? `${window.location.origin}/api/paytr/callback` : '');
+
+    // PayTR Kuralları:
+    // 1) callback_link en fazla 400 karakter, http/https ile başlamalı, localhost olmamalı ve port (:3000 vb.) içermemelidir.
+    // 2) callback_id en fazla 64 karakter ve KESİNLİKLE alfanümerik olmalıdır (alt çizgi, tire vs. kabul edilmez).
+    // 3) Opsiyonel alanlardır. Eğer geçerli bir canlı domain yoksa boş gönderilmelidir.
+    let callbackLink = '';
+    let callbackId = '';
+
+    if (params.callbackUrl && !params.callbackUrl.includes('localhost') && !params.callbackUrl.includes(':')) {
+      callbackLink = params.callbackUrl;
+      callbackId = (params.callbackId || `IMP${Date.now()}`).replace(/[^a-zA-Z0-9]/g, '');
+    } else if (
+      typeof window !== 'undefined' &&
+      window.location.hostname !== 'localhost' &&
+      !window.location.host.includes(':') &&
+      window.location.protocol.startsWith('http')
+    ) {
+      callbackLink = `${window.location.origin}/api/paytr/callback`;
+      callbackId = (params.callbackId || `IMP${Date.now()}`).replace(/[^a-zA-Z0-9]/g, '');
+    }
 
     const paytrToken = await computePayTRLinkToken({
       name: cleanName,
@@ -163,7 +181,7 @@ export async function requestPayTRLink(params: PayTRLinkParams): Promise<PayTRLi
     formData.append('debug_on', '1');
     formData.append('paytr_token', paytrToken);
 
-    if (callbackLink) {
+    if (callbackLink && callbackId) {
       formData.append('callback_link', callbackLink);
       formData.append('callback_id', callbackId);
     }
