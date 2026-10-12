@@ -64,7 +64,7 @@ export default function MaintenanceOverlay({ settings }: MaintenanceOverlayProps
           <span>BAKIM MODU AÇIK: Sadece siz yönetici olduğunuz için siteyi görüntülüyorsunuz. Ziyaretçiler yapım aşaması ekranını görüyor.</span>
         </div>
         <Link
-          href="/admin"
+          href="/welcome-webmaster"
           className="px-3 py-1 bg-black text-white rounded-md text-[11px] font-semibold hover:bg-zinc-800 transition-colors"
         >
           Panele Git
@@ -93,14 +93,6 @@ export default function MaintenanceOverlay({ settings }: MaintenanceOverlayProps
             </span>
           </div>
         </div>
-
-        <Link
-          href="/admin"
-          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium text-zinc-400 hover:text-white border border-zinc-800 hover:bg-zinc-900 transition-colors"
-        >
-          <Shield className="w-3.5 h-3.5" />
-          <span>Yönetici Girişi</span>
-        </Link>
       </div>
 
       {/* Main Announcement */}

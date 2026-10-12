@@ -259,7 +259,7 @@ export default function Footer({ settings, services }: FooterProps) {
             </Link>
           </div>
 
-          {/* Bottom copyright & admin */}
+          {/* Bottom copyright */}
           <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-zinc-400 gap-4">
             <p>
               &copy; {currentYear} {settings.siteName}. Tüm hakları saklıdır.
@@ -267,13 +267,6 @@ export default function Footer({ settings, services }: FooterProps) {
 
             <div className="flex items-center gap-6">
               <span>Kayseri Dijital & Medya Ajansı</span>
-              <Link
-                href="/admin"
-                className="inline-flex items-center gap-1.5 text-zinc-400 hover:text-zinc-300 transition-colors"
-              >
-                <Shield className="w-3.5 h-3.5" />
-                <span>Yönetim Paneli</span>
-              </Link>
             </div>
           </div>
         </div>

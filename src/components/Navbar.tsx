@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Menu, X, ArrowUpRight, Shield } from 'lucide-react';
+import { Menu, X, ArrowUpRight, CreditCard } from 'lucide-react';
 import { SiteSettings } from '@/types';
 
 interface NavbarProps {
@@ -64,14 +64,14 @@ export default function Navbar({ settings }: NavbarProps) {
           ))}
         </nav>
 
-        {/* Action Button & Admin Link */}
-        <div className="hidden md:flex items-center gap-4">
+        {/* Action Buttons: Online Ödeme + Teklif Al */}
+        <div className="hidden md:flex items-center gap-3">
           <Link
-            href="/admin"
-            title="Yönetim Paneli"
-            className="p-2.5 rounded-full text-zinc-400 hover:text-white hover:bg-white/5 transition-all"
+            href="/odeme"
+            className="group inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-semibold uppercase tracking-wider text-zinc-300 bg-zinc-900/80 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 hover:text-white transition-all duration-300 backdrop-blur-md"
           >
-            <Shield className="w-4 h-4" />
+            <CreditCard className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Online Ödeme</span>
           </Link>
 
           <a
@@ -107,6 +107,15 @@ export default function Navbar({ settings }: NavbarProps) {
             </a>
           ))}
           <div className="pt-2 flex flex-col gap-3">
+            <Link
+              href="/odeme"
+              onClick={() => setMobileMenuOpen(false)}
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-full text-xs font-semibold uppercase tracking-wider text-zinc-200 bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 transition-colors"
+            >
+              <CreditCard className="w-4 h-4 text-emerald-400" />
+              <span>Online Ödeme Yap</span>
+            </Link>
+
             <a
               href="#iletisim"
               onClick={() => setMobileMenuOpen(false)}
@@ -114,13 +123,6 @@ export default function Navbar({ settings }: NavbarProps) {
             >
               Teklif Al
             </a>
-            <Link
-              href="/admin"
-              onClick={() => setMobileMenuOpen(false)}
-              className="w-full text-center py-2.5 rounded-full text-xs font-medium text-zinc-400 hover:text-white border border-zinc-800"
-            >
-              Yönetim Paneli Girişi
-            </Link>
           </div>
         </div>
       )}
