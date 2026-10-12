@@ -83,15 +83,12 @@ export default function MaintenanceOverlay({ settings }: MaintenanceOverlayProps
       {/* Top Bar */}
       <div className="relative max-w-6xl w-full mx-auto flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center font-black text-black text-lg tracking-tighter">
-            İ
-          </div>
-          <div className="flex flex-col">
-            <span className="font-bold text-lg tracking-tight text-white">İMPERYA</span>
-            <span className="text-[10px] tracking-widest uppercase text-zinc-400 font-medium -mt-1">
-              MEDIA SOLUTIONS
-            </span>
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logo.png"
+            alt="İmperya Media Solutions"
+            className="h-8 sm:h-9 w-auto object-contain"
+          />
         </div>
       </div>
 

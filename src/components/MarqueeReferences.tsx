@@ -39,6 +39,8 @@ export default function MarqueeReferences({ references }: MarqueeReferencesProps
                 <img
                   src={item.logoUrl}
                   alt={item.name}
+                  loading="lazy"
+                  decoding="async"
                   className="h-8 sm:h-10 max-w-[140px] object-contain grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300"
                 />
               ) : (

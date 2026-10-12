@@ -38,17 +38,12 @@ export default function Navbar({ settings }: NavbarProps) {
       <div className="max-w-7xl mx-auto px-6 md:px-12 flex items-center justify-between">
         {/* Brand Logo */}
         <Link href="/" className="group flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center font-black text-black text-lg tracking-tighter group-hover:scale-105 transition-transform duration-300">
-            İ
-          </div>
-          <div className="flex flex-col">
-            <span className="font-bold text-lg md:text-xl tracking-tight text-white group-hover:text-zinc-200 transition-colors">
-              İMPERYA
-            </span>
-            <span className="text-[10px] tracking-widest uppercase text-zinc-400 font-medium -mt-1">
-              MEDIA SOLUTIONS
-            </span>
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logo.png"
+            alt="İmperya Media Solutions"
+            className="h-8 sm:h-9 w-auto object-contain group-hover:scale-105 transition-transform duration-300"
+          />
         </Link>
 
         {/* Desktop Navigation */}

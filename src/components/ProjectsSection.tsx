@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { ArrowUpRight, X, Calendar, User, Tag } from 'lucide-react';
 import { ProjectItem } from '@/types';
+import ResponsiveImage from './ResponsiveImage';
 
 interface ProjectsSectionProps {
   projects: ProjectItem[];
@@ -64,13 +65,14 @@ export default function ProjectsSection({ projects }: ProjectsSectionProps) {
           >
             {/* Project Image */}
             <div className="relative aspect-[16/10] overflow-hidden bg-zinc-950">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <ResponsiveImage
                 src={project.coverImage}
                 alt={project.title}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 brightness-90 group-hover:brightness-100"
+                aspectRatio="aspect-[16/10]"
+                sizes="(max-width: 768px) 100vw, 50vw"
+                className="group-hover:scale-105 transition-transform duration-700 brightness-90 group-hover:brightness-100"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none" />
 
               {/* Top tag badge */}
               <div className="absolute top-4 left-4 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-white text-[11px] font-semibold">
@@ -125,11 +127,12 @@ export default function ProjectsSection({ projects }: ProjectsSectionProps) {
             </button>
 
             <div className="relative aspect-[16/9] w-full bg-black shrink-0">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <ResponsiveImage
                 src={activeModalProject.coverImage}
                 alt={activeModalProject.title}
-                className="w-full h-full object-cover"
+                aspectRatio="aspect-[16/9]"
+                sizes="(max-width: 1024px) 100vw, 800px"
+                priority
               />
             </div>
 

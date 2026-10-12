@@ -41,6 +41,7 @@ import {
   deleteInquiry,
 } from '@/lib/storage';
 import { initialServices, initialReferences, initialProjects, initialSettings } from '@/data/initialData';
+import { optimizeImageFile } from '@/lib/imageOptimizer';
 
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -971,12 +972,34 @@ export default function AdminPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
-                  Logo Görsel URL'si (İsteğe bağlı)
-                </label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-semibold text-zinc-300">
+                    Logo Görseli (İsteğe bağlı)
+                  </label>
+                  <label className="cursor-pointer text-[11px] font-semibold text-emerald-400 hover:text-emerald-300 transition-colors flex items-center gap-1">
+                    <span>⚡ Logo Sıkıştır & Yükle</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          try {
+                            const opt = await optimizeImageFile(file, 400, 200, 0.9);
+                            setEditingReference({ ...editingReference, logoUrl: opt.dataUrl });
+                            showToast(`Logo optimize edildi: ${(opt.originalSize / 1024).toFixed(0)}KB ➔ ${(opt.optimizedSize / 1024).toFixed(0)}KB`);
+                          } catch {
+                            alert('Logo sıkıştırılamadı');
+                          }
+                        }
+                      }}
+                    />
+                  </label>
+                </div>
                 <input
-                  type="url"
-                  placeholder="https://.../logo.png"
+                  type="text"
+                  placeholder="https://.../logo.png veya yukarıdan dosya seçin"
                   value={editingReference.logoUrl || ''}
                   onChange={(e) =>
                     setEditingReference({ ...editingReference, logoUrl: e.target.value })
@@ -1079,19 +1102,47 @@ export default function AdminPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
-                  Kapak Görseli URL
-                </label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-semibold text-zinc-300">
+                    Kapak Görseli (URL veya Dosyadan Yükle) *
+                  </label>
+                  <label className="cursor-pointer text-[11px] font-semibold text-emerald-400 hover:text-emerald-300 transition-colors flex items-center gap-1">
+                    <span>⚡ Otomatik WebP Sıkıştır & Yükle</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          try {
+                            const opt = await optimizeImageFile(file, 1600, 1000, 0.82);
+                            setEditingProject({ ...editingProject, coverImage: opt.dataUrl });
+                            showToast(`Görsel optimize edildi: ${(opt.originalSize / 1024).toFixed(0)}KB ➔ ${(opt.optimizedSize / 1024).toFixed(0)}KB`);
+                          } catch {
+                            alert('Görsel sıkıştırılamadı');
+                          }
+                        }
+                      }}
+                    />
+                  </label>
+                </div>
                 <input
-                  type="url"
+                  type="text"
                   required
-                  placeholder="https://images.unsplash.com/..."
+                  placeholder="https://... veya yukarıdan dosya yükleyin"
                   value={editingProject.coverImage}
                   onChange={(e) =>
                     setEditingProject({ ...editingProject, coverImage: e.target.value })
                   }
                   className="w-full px-4 py-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-white text-sm focus:outline-none focus:border-zinc-500"
                 />
+                {editingProject.coverImage && (
+                  <div className="mt-2 h-20 rounded-lg overflow-hidden border border-zinc-800 bg-zinc-950">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={editingProject.coverImage} alt="Önizleme" className="h-full w-full object-cover" />
+                  </div>
+                )}
               </div>
 
               <div>
