@@ -303,7 +303,7 @@ function PaymentContent() {
                   >
                     Mesafeli Satış Sözleşmesi
                   </button>
-                  ve
+                  ,
                   <button
                     type="button"
                     onClick={() => setActiveLegalModal('iade')}
@@ -311,7 +311,15 @@ function PaymentContent() {
                   >
                     İptal ve İade Koşulları
                   </button>
-                  metinlerini okudum, kabul ediyorum.
+                  ve
+                  <button
+                    type="button"
+                    onClick={() => setActiveLegalModal('teslimat')}
+                    className="text-white underline hover:text-zinc-200 mx-1 font-semibold"
+                  >
+                    Teslimat & İfa Şartları
+                  </button>
+                  metinlerini okudum, gayrikabili rücu kabul ediyorum.
                 </label>
               </div>
 
@@ -436,7 +444,13 @@ function PaymentContent() {
       </div>
 
       {/* Render Legal Modal if clicked */}
-      {activeLegalModal && <LegalModals settings={settings} />}
+      {activeLegalModal && (
+        <LegalModals
+          settings={settings}
+          activeDoc={activeLegalModal}
+          onClose={() => setActiveLegalModal(null)}
+        />
+      )}
     </div>
   );
 }

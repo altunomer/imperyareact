@@ -240,6 +240,12 @@ export default function Footer({ settings, services }: FooterProps) {
               İptal ve İade Koşulları
             </button>
             <button
+              onClick={() => setActiveLegalModal('teslimat')}
+              className="hover:text-white transition-colors underline underline-offset-4"
+            >
+              Teslimat ve İfa Bilgileri
+            </button>
+            <button
               onClick={() => setActiveLegalModal('gizlilik')}
               className="hover:text-white transition-colors underline underline-offset-4"
             >
@@ -249,7 +255,7 @@ export default function Footer({ settings, services }: FooterProps) {
               onClick={() => setActiveLegalModal('kvkk')}
               className="hover:text-white transition-colors underline underline-offset-4"
             >
-              KVKK Aydınlatma Metni & Teslimat
+              KVKK Aydınlatma Metni
             </button>
             <Link
               href="/odeme"
@@ -274,7 +280,11 @@ export default function Footer({ settings, services }: FooterProps) {
 
       {/* Render Legal Modal if clicked */}
       {activeLegalModal && (
-        <LegalModals settings={settings} />
+        <LegalModals
+          settings={settings}
+          activeDoc={activeLegalModal}
+          onClose={() => setActiveLegalModal(null)}
+        />
       )}
     </>
   );
