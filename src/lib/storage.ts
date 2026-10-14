@@ -1,5 +1,5 @@
-import { ServiceItem, ReferenceItem, ProjectItem, SiteSettings, ContactInquiry } from '@/types';
-import { initialServices, initialReferences, initialProjects, initialSettings } from '@/data/initialData';
+import { ServiceItem, ReferenceItem, ProjectItem, SiteSettings, ContactInquiry, TeamMember } from '@/types';
+import { initialServices, initialReferences, initialProjects, initialSettings, initialTeamMembers } from '@/data/initialData';
 
 const STORAGE_KEYS = {
   SERVICES: 'imperya_services_v1',
@@ -7,6 +7,7 @@ const STORAGE_KEYS = {
   PROJECTS: 'imperya_projects_v1',
   SETTINGS: 'imperya_settings_v1',
   INQUIRIES: 'imperya_inquiries_v1',
+  TEAM: 'imperya_team_v1',
   AUTH: 'imperya_admin_auth',
 };
 
@@ -119,6 +120,8 @@ export async function getSettings(): Promise<SiteSettings> {
         merged = {
           ...initialSettings,
           ...data,
+          heroImage: data.heroImage?.trim() || initialSettings.heroImage,
+          aboutImage: data.aboutImage?.trim() || initialSettings.aboutImage,
           paytrMerchantId: data.paytrMerchantId?.trim() || initialSettings.paytrMerchantId,
           paytrMerchantKey: data.paytrMerchantKey?.trim() || initialSettings.paytrMerchantKey,
           paytrMerchantSalt: data.paytrMerchantSalt?.trim() || initialSettings.paytrMerchantSalt,
@@ -136,6 +139,8 @@ export async function getSettings(): Promise<SiteSettings> {
       merged = {
         ...initialSettings,
         ...parsed,
+        heroImage: parsed.heroImage?.trim() || initialSettings.heroImage,
+        aboutImage: parsed.aboutImage?.trim() || initialSettings.aboutImage,
         paytrMerchantId: parsed.paytrMerchantId?.trim() || initialSettings.paytrMerchantId,
         paytrMerchantKey: parsed.paytrMerchantKey?.trim() || initialSettings.paytrMerchantKey,
         paytrMerchantSalt: parsed.paytrMerchantSalt?.trim() || initialSettings.paytrMerchantSalt,
@@ -149,10 +154,12 @@ export async function getSettings(): Promise<SiteSettings> {
 
 export async function saveSettings(settings: SiteSettings): Promise<boolean> {
   if (typeof window !== 'undefined') {
-    // API bilgilerinin kazara silinmesini önleyen güvenlik katmanı
+    // API ve görsel bilgilerinin kazara silinmesini önleyen güvenlik katmanı
     const current = await getSettings();
     const safeSettings: SiteSettings = {
       ...settings,
+      heroImage: settings.heroImage?.trim() || current.heroImage || initialSettings.heroImage,
+      aboutImage: settings.aboutImage?.trim() || current.aboutImage || initialSettings.aboutImage,
       paytrMerchantId: settings.paytrMerchantId?.trim() || current.paytrMerchantId || initialSettings.paytrMerchantId,
       paytrMerchantKey: settings.paytrMerchantKey?.trim() || current.paytrMerchantKey || initialSettings.paytrMerchantKey,
       paytrMerchantSalt: settings.paytrMerchantSalt?.trim() || current.paytrMerchantSalt || initialSettings.paytrMerchantSalt,
@@ -220,6 +227,38 @@ export async function deleteInquiry(id: string): Promise<boolean> {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id }),
+      });
+    } catch {}
+    return true;
+  }
+  return false;
+}
+
+// --- TEAM MEMBERS ---
+export async function getTeamMembers(): Promise<TeamMember[]> {
+  if (typeof window === 'undefined') return initialTeamMembers;
+  try {
+    const res = await fetch('/api/team');
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0) return data;
+    }
+  } catch {}
+  try {
+    const local = localStorage.getItem(STORAGE_KEYS.TEAM);
+    if (local) return JSON.parse(local);
+  } catch {}
+  return initialTeamMembers;
+}
+
+export async function saveTeamMembers(team: TeamMember[]): Promise<boolean> {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(STORAGE_KEYS.TEAM, JSON.stringify(team));
+    try {
+      await fetch('/api/team', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(team),
       });
     } catch {}
     return true;

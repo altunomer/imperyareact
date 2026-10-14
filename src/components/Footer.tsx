@@ -141,6 +141,11 @@ export default function Footer({ settings, services }: FooterProps) {
                   </a>
                 </li>
                 <li>
+                  <a href="#ekibimiz" className="hover:text-white transition-colors">
+                    Ekibimiz
+                  </a>
+                </li>
+                <li>
                   <a href="#iletisim" className="hover:text-white transition-colors">
                     İletişim & Teklif
                   </a>

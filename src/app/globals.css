@@ -76,3 +76,54 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #3f3f46;
 }
+
+/* Site Genel Arka Planı: Siyaha Çok Hafif Mavi Hareketli Animasyon */
+@keyframes slowAmbientBlue {
+  0% {
+    transform: translate(0%, 0%) scale(1);
+    opacity: 0.18;
+  }
+  33% {
+    transform: translate(6%, -8%) scale(1.12);
+    opacity: 0.28;
+  }
+  66% {
+    transform: translate(-8%, 6%) scale(0.95);
+    opacity: 0.22;
+  }
+  100% {
+    transform: translate(0%, 0%) scale(1);
+    opacity: 0.18;
+  }
+}
+
+@keyframes heroGradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.ambient-site-bg {
+  position: fixed;
+  inset: -20%;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse 900px 700px at 15% 15%, rgba(16, 50, 115, 0.22), transparent 75%),
+    radial-gradient(ellipse 800px 600px at 85% 45%, rgba(10, 36, 85, 0.18), transparent 70%),
+    radial-gradient(ellipse 950px 800px at 45% 85%, rgba(18, 60, 130, 0.16), transparent 75%);
+  animation: slowAmbientBlue 22s ease-in-out infinite alternate;
+  filter: blur(70px);
+  will-change: transform, opacity;
+}
+
+.animate-hero-gradient {
+  background-size: 200% 200%;
+  animation: heroGradientShift 14s ease infinite;
+}

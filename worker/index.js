@@ -114,6 +114,37 @@ export default {
         }
       }
 
+      // /api/team
+      if (url.pathname === '/api/team') {
+        if (request.method === 'GET') {
+          try {
+            const data = storage ? await storage.get('team') : null;
+            return new Response(data || 'null', {
+              headers: { 'Content-Type': 'application/json', ...corsHeaders },
+            });
+          } catch (e) {
+            return new Response(JSON.stringify({ error: e.message }), {
+              status: 500,
+              headers: { 'Content-Type': 'application/json', ...corsHeaders },
+            });
+          }
+        }
+        if (request.method === 'POST') {
+          try {
+            const body = await request.text();
+            if (storage) await storage.put('team', body);
+            return new Response(JSON.stringify({ success: true }), {
+              headers: { 'Content-Type': 'application/json', ...corsHeaders },
+            });
+          } catch (e) {
+            return new Response(JSON.stringify({ error: e.message }), {
+              status: 400,
+              headers: { 'Content-Type': 'application/json', ...corsHeaders },
+            });
+          }
+        }
+      }
+
       // /api/settings
       if (url.pathname === '/api/settings') {
         if (request.method === 'GET') {

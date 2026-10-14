@@ -26,6 +26,7 @@ export default function Navbar({ settings }: NavbarProps) {
     { name: 'İşlerimiz', href: '#islerimiz' },
     { name: 'Referanslar', href: '#referanslar' },
     { name: 'Hakkımızda', href: '#hakkimizda' },
+    { name: 'Ekibimiz', href: '#ekibimiz' },
     { name: 'İletişim', href: '#iletisim' },
   ];
 

@@ -1,4 +1,4 @@
-import { ServiceItem, ReferenceItem, ProjectItem, SiteSettings } from '@/types';
+import { ServiceItem, ReferenceItem, ProjectItem, SiteSettings, TeamMember } from '@/types';
 
 export const initialServices: ServiceItem[] = [
   {
@@ -219,9 +219,59 @@ export const initialSettings: SiteSettings = {
   maintenanceMode: false,
   maintenanceTitle: 'Yeni Web Sitemiz Çok Yakında Yayında!',
   maintenanceMessage: 'İmperya Media Solutions olarak sizlere daha iyi bir deneyim sunmak için dijital deneyimimizi güncelliyoruz. Çok yakında buradayız.',
+  // Görsel ve Tasarım Ayarları (Admin Panel Düzenlenebilir)
+  heroImage: 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?auto=format&fit=crop&w=1200&q=80',
+  aboutImage: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1200&q=80',
   // PayTR Kalıcı ve Korumalı Bilgiler
   paytrMerchantId: '756001',
   paytrMerchantKey: 'm6e8n9KybSHn4pif',
   paytrMerchantSalt: 'tx3Z4RbskLYeSHQi',
   paytrTestMode: true,
 };
+
+export const initialTeamMembers: TeamMember[] = [
+  {
+    id: '1',
+    name: 'Ömer Altun',
+    role: 'Kurucu & Kreatif Direktör',
+    image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80',
+    bio: 'Marka vizyonu, yaratıcı yönetmenlik ve stratejik medya danışmanlığı lideri.',
+    instagram: 'https://instagram.com/imperyamediasolutions',
+    linkedin: 'https://linkedin.com/company/imperyamediasolutions',
+    order: 1,
+    active: true,
+  },
+  {
+    id: '2',
+    name: 'Ali Yılmaz',
+    role: 'Prodüksiyon & Görüntü Yönetmeni',
+    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=800&q=80',
+    bio: '4K sinematik çekimler, drone operasyonları ve reklam kurgusu uzmanı.',
+    instagram: 'https://instagram.com',
+    linkedin: 'https://linkedin.com',
+    order: 2,
+    active: true,
+  },
+  {
+    id: '3',
+    name: 'Selin Demir',
+    role: 'Sosyal Medya & İçerik Stratejisti',
+    image: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=800&q=80',
+    bio: 'Viral video senaryoları, topluluk yönetimi ve kreatif konsept tasarımı.',
+    instagram: 'https://instagram.com',
+    linkedin: 'https://linkedin.com',
+    order: 3,
+    active: true,
+  },
+  {
+    id: '4',
+    name: 'Burak Kaya',
+    role: 'Dijital Pazarlama & Web Mimarı',
+    image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=800&q=80',
+    bio: 'Performans reklamları, modern web yazılımları ve SEO optimizasyonu.',
+    instagram: 'https://instagram.com',
+    linkedin: 'https://linkedin.com',
+    order: 4,
+    active: true,
+  },
+];

@@ -51,11 +51,26 @@ export interface SiteSettings {
   maintenanceMode: boolean;
   maintenanceTitle: string;
   maintenanceMessage: string;
+  // Görsel ve Tasarım Ayarları (Admin Panel Düzenlenebilir)
+  heroImage?: string;
+  aboutImage?: string;
   // PayTR Settings
   paytrMerchantId: string;
   paytrMerchantKey: string;
   paytrMerchantSalt: string;
   paytrTestMode: boolean;
+}
+
+export interface TeamMember {
+  id: string;
+  name: string;
+  role: string;
+  image: string;
+  bio?: string;
+  instagram?: string;
+  linkedin?: string;
+  order: number;
+  active: boolean;
 }
 
 export interface ContactInquiry {

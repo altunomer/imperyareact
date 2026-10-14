@@ -20,6 +20,7 @@ import {
   ExternalLink,
   MessageSquare,
   Lock,
+  Users,
 } from 'lucide-react';
 import {
   ServiceItem,
@@ -27,6 +28,7 @@ import {
   ProjectItem,
   SiteSettings,
   ContactInquiry,
+  TeamMember,
 } from '@/types';
 import {
   getServices,
@@ -39,8 +41,16 @@ import {
   saveSettings,
   getInquiries,
   deleteInquiry,
+  getTeamMembers,
+  saveTeamMembers,
 } from '@/lib/storage';
-import { initialServices, initialReferences, initialProjects, initialSettings } from '@/data/initialData';
+import {
+  initialServices,
+  initialReferences,
+  initialProjects,
+  initialSettings,
+  initialTeamMembers,
+} from '@/data/initialData';
 import { optimizeImageFile } from '@/lib/imageOptimizer';
 import { testPayTRCredentials } from '@/lib/paytr';
 
@@ -50,12 +60,13 @@ export default function AdminPage() {
   const [authError, setAuthError] = useState('');
 
   const [activeTab, setActiveTab] = useState<
-    'references' | 'services' | 'projects' | 'settings' | 'inquiries'
+    'references' | 'services' | 'projects' | 'team' | 'settings' | 'inquiries'
   >('references');
 
   const [services, setServices] = useState<ServiceItem[]>(initialServices);
   const [references, setReferences] = useState<ReferenceItem[]>(initialReferences);
   const [projects, setProjects] = useState<ProjectItem[]>(initialProjects);
+  const [team, setTeam] = useState<TeamMember[]>(initialTeamMembers);
   const [settings, setSettings] = useState<SiteSettings>(initialSettings);
   const [inquiries, setInquiries] = useState<ContactInquiry[]>([]);
 
@@ -91,6 +102,7 @@ export default function AdminPage() {
   const [editingReference, setEditingReference] = useState<ReferenceItem | null>(null);
   const [editingProject, setEditingProject] = useState<ProjectItem | null>(null);
   const [editingService, setEditingService] = useState<ServiceItem | null>(null);
+  const [editingTeamMember, setEditingTeamMember] = useState<TeamMember | null>(null);
 
   useEffect(() => {
     // Check local session
@@ -102,16 +114,18 @@ export default function AdminPage() {
   }, []);
 
   const loadAllData = async () => {
-    const [srv, refs, prj, setts, inq] = await Promise.all([
+    const [srv, refs, prj, teamData, setts, inq] = await Promise.all([
       getServices(),
       getReferences(),
       getProjects(),
+      getTeamMembers(),
       getSettings(),
       getInquiries(),
     ]);
     setServices(srv);
     setReferences(refs);
     setProjects(prj);
+    setTeam(teamData);
     setSettings(setts);
     setInquiries(inq);
   };
@@ -214,6 +228,38 @@ export default function AdminPage() {
     await saveServices(updated);
     setEditingService(null);
     showToast('Hizmet güncellendi.');
+  };
+
+  // --- TEAM MEMBER ACTIONS ---
+  const handleSaveTeamMember = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingTeamMember) return;
+
+    let updated: TeamMember[];
+    if (editingTeamMember.id === 'new') {
+      const newItem: TeamMember = {
+        ...editingTeamMember,
+        id: Date.now().toString(),
+        order: editingTeamMember.order || team.length + 1,
+      };
+      updated = [...team, newItem];
+    } else {
+      updated = team.map((m) =>
+        m.id === editingTeamMember.id ? editingTeamMember : m
+      );
+    }
+    setTeam(updated);
+    await saveTeamMembers(updated);
+    setEditingTeamMember(null);
+    showToast('Ekip üyesi kaydedildi.');
+  };
+
+  const handleDeleteTeamMember = async (id: string) => {
+    if (!confirm('Bu ekip üyesini silmek istediğinizden emin misiniz?')) return;
+    const updated = team.filter((m) => m.id !== id);
+    setTeam(updated);
+    await saveTeamMembers(updated);
+    showToast('Ekip üyesi silindi.');
   };
 
   // --- SETTINGS ACTIONS ---
@@ -371,6 +417,18 @@ export default function AdminPage() {
           >
             <Briefcase className="w-4 h-4" />
             <span>Yapılan İşler ({projects.length})</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('team')}
+            className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-colors ${
+              activeTab === 'team'
+                ? 'bg-white text-black'
+                : 'text-zinc-400 hover:text-white hover:bg-zinc-900'
+            }`}
+          >
+            <Users className="w-4 h-4" />
+            <span>Ekibimiz ({team.length})</span>
           </button>
 
           <button
@@ -624,6 +682,104 @@ export default function AdminPage() {
           </div>
         )}
 
+        {/* TAB: EKİBİMİZ */}
+        {activeTab === 'team' && (
+          <div>
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-white">Ekibimiz & Kadro</h2>
+                <p className="text-xs text-zinc-400 mt-1">
+                  Ana sayfadaki "Ekibimiz" alanında sergilenen takım arkadaşlarını yönetin.
+                </p>
+              </div>
+
+              <button
+                onClick={() =>
+                  setEditingTeamMember({
+                    id: 'new',
+                    name: '',
+                    role: '',
+                    image: '',
+                    bio: '',
+                    instagram: '',
+                    linkedin: '',
+                    order: team.length + 1,
+                    active: true,
+                  })
+                }
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider text-black bg-white hover:bg-zinc-200 transition-colors shadow-lg"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Yeni Ekip Üyesi Ekle</span>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {team.map((member) => (
+                <div
+                  key={member.id}
+                  className="p-4 rounded-2xl border border-zinc-800 bg-zinc-900/40 flex flex-col justify-between gap-4 group"
+                >
+                  <div>
+                    <div className="relative aspect-[4/5] w-full rounded-xl overflow-hidden bg-zinc-950 mb-3 border border-zinc-800">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={member.image || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80'}
+                        alt={member.name}
+                        className="w-full h-full object-cover object-top"
+                      />
+                      <div className="absolute top-2 right-2">
+                        <span
+                          className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                            member.active
+                              ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                              : 'bg-zinc-800 text-zinc-500'
+                          }`}
+                        >
+                          {member.active ? 'Yayında' : 'Gizli'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-blue-400">
+                      {member.role}
+                    </span>
+                    <h3 className="text-sm font-bold text-white mt-0.5">{member.name}</h3>
+                    {member.bio && (
+                      <p className="text-xs text-zinc-400 mt-1 line-clamp-2 leading-relaxed">
+                        {member.bio}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-between pt-3 border-t border-zinc-800/80">
+                    <span className="text-[11px] text-zinc-500 font-mono">
+                      Sıra: #{member.order}
+                    </span>
+
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => setEditingTeamMember(member)}
+                        className="p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+                        title="Düzenle"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteTeamMember(member.id)}
+                        className="p-2 rounded-lg text-zinc-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                        title="Sil"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* TAB 4: GELEN TALEPLER */}
         {activeTab === 'inquiries' && (
           <div>
@@ -803,6 +959,117 @@ export default function AdminPage() {
                     onChange={(e) => setSettings({ ...settings, linkedin: e.target.value })}
                     className="w-full px-4 py-3 rounded-xl bg-zinc-950 border border-zinc-800 text-white text-sm focus:outline-none focus:border-zinc-500"
                   />
+                </div>
+              </div>
+
+              {/* GÖRSEL VE VİTRİN AYARLARI */}
+              <div className="p-6 rounded-2xl border border-zinc-800 bg-zinc-950/70 mt-4 space-y-6">
+                <div>
+                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                    <Image className="w-4 h-4 text-blue-400" />
+                    <span>Görsel & Vitrin Ayarları</span>
+                  </h3>
+                  <p className="text-xs text-zinc-400 mt-1">
+                    Giriş (Hero) alanındaki sağ vitrin görseli ve Biz Kimiz & Vizyonumuz kutusundaki overlay görseli buradan güncelleyebilirsiniz.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Hero Görseli */}
+                  <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/80">
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-xs font-semibold text-zinc-300">
+                        Giriş (Hero) Vitrin Görseli
+                      </label>
+                      <label className="cursor-pointer text-[11px] font-semibold text-emerald-400 hover:text-emerald-300 transition-colors flex items-center gap-1">
+                        <span>⚡ Sıkıştır & Yükle</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              try {
+                                const opt = await optimizeImageFile(file, 1200, 1500, 0.85);
+                                setSettings({ ...settings, heroImage: opt.dataUrl });
+                                showToast(`Hero görseli optimize edildi: ${(opt.originalSize / 1024).toFixed(0)}KB ➔ ${(opt.optimizedSize / 1024).toFixed(0)}KB`);
+                              } catch {
+                                alert('Görsel sıkıştırılamadı');
+                              }
+                            }
+                          }}
+                        />
+                      </label>
+                    </div>
+
+                    <input
+                      type="text"
+                      placeholder="https://... veya dosya yükleyin"
+                      value={settings.heroImage || ''}
+                      onChange={(e) => setSettings({ ...settings, heroImage: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl bg-zinc-950 border border-zinc-800 text-white text-xs focus:outline-none focus:border-zinc-500 mb-3"
+                    />
+
+                    {settings.heroImage && (
+                      <div className="relative aspect-[16/10] w-full rounded-xl overflow-hidden bg-zinc-950 border border-zinc-800">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={settings.heroImage}
+                          alt="Hero Preview"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Biz Kimiz Görseli */}
+                  <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/80">
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-xs font-semibold text-zinc-300">
+                        Biz Kimiz & Vizyon Görseli
+                      </label>
+                      <label className="cursor-pointer text-[11px] font-semibold text-emerald-400 hover:text-emerald-300 transition-colors flex items-center gap-1">
+                        <span>⚡ Sıkıştır & Yükle</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              try {
+                                const opt = await optimizeImageFile(file, 1200, 800, 0.85);
+                                setSettings({ ...settings, aboutImage: opt.dataUrl });
+                                showToast(`Hakkımızda görseli optimize edildi: ${(opt.originalSize / 1024).toFixed(0)}KB ➔ ${(opt.optimizedSize / 1024).toFixed(0)}KB`);
+                              } catch {
+                                alert('Görsel sıkıştırılamadı');
+                              }
+                            }
+                          }}
+                        />
+                      </label>
+                    </div>
+
+                    <input
+                      type="text"
+                      placeholder="https://... veya dosya yükleyin"
+                      value={settings.aboutImage || ''}
+                      onChange={(e) => setSettings({ ...settings, aboutImage: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl bg-zinc-950 border border-zinc-800 text-white text-xs focus:outline-none focus:border-zinc-500 mb-3"
+                    />
+
+                    {settings.aboutImage && (
+                      <div className="relative aspect-[16/10] w-full rounded-xl overflow-hidden bg-zinc-950 border border-zinc-800">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={settings.aboutImage}
+                          alt="About Preview"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -1332,6 +1599,189 @@ export default function AdminPage() {
                 <button
                   type="button"
                   onClick={() => setEditingService(null)}
+                  className="px-5 py-2.5 rounded-full text-xs font-medium text-zinc-400 hover:text-white"
+                >
+                  İptal
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider text-black bg-white hover:bg-zinc-200"
+                >
+                  Kaydet
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT/ADD TEAM MEMBER MODAL */}
+      {editingTeamMember && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="w-full max-w-lg bg-zinc-950 border border-zinc-800 rounded-3xl p-8 shadow-2xl">
+            <h3 className="text-xl font-bold text-white mb-6">
+              {editingTeamMember.id === 'new' ? 'Yeni Ekip Üyesi Ekle' : 'Ekip Üyesini Düzenle'}
+            </h3>
+
+            <form onSubmit={handleSaveTeamMember} className="flex flex-col gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
+                    Ad Soyad *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Örn: Ömer Altun"
+                    value={editingTeamMember.name}
+                    onChange={(e) =>
+                      setEditingTeamMember({ ...editingTeamMember, name: e.target.value })
+                    }
+                    className="w-full px-4 py-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-white text-sm focus:outline-none focus:border-zinc-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
+                    Ünvan / Rol *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Örn: Kurucu & Kreatif Direktör"
+                    value={editingTeamMember.role}
+                    onChange={(e) =>
+                      setEditingTeamMember({ ...editingTeamMember, role: e.target.value })
+                    }
+                    className="w-full px-4 py-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-white text-sm focus:outline-none focus:border-zinc-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-semibold text-zinc-300">
+                    Fotoğraf URL *
+                  </label>
+                  <label className="cursor-pointer text-[11px] font-semibold text-emerald-400 hover:text-emerald-300 transition-colors flex items-center gap-1">
+                    <span>⚡ Fotoğraf Sıkıştır & Yükle</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          try {
+                            const opt = await optimizeImageFile(file, 800, 1000, 0.85);
+                            setEditingTeamMember({ ...editingTeamMember, image: opt.dataUrl });
+                            showToast(`Fotoğraf optimize edildi: ${(opt.originalSize / 1024).toFixed(0)}KB ➔ ${(opt.optimizedSize / 1024).toFixed(0)}KB`);
+                          } catch {
+                            alert('Görsel sıkıştırılamadı');
+                          }
+                        }
+                      }}
+                    />
+                  </label>
+                </div>
+                <input
+                  type="text"
+                  required
+                  placeholder="https://... veya dosya yükleyin"
+                  value={editingTeamMember.image}
+                  onChange={(e) =>
+                    setEditingTeamMember({ ...editingTeamMember, image: e.target.value })
+                  }
+                  className="w-full px-4 py-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-white text-sm focus:outline-none focus:border-zinc-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
+                  Kısa Biyografi / Uzmanlık
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="Kreatif yönetmenlik ve stratejik medya danışmanlığı..."
+                  value={editingTeamMember.bio || ''}
+                  onChange={(e) =>
+                    setEditingTeamMember({ ...editingTeamMember, bio: e.target.value })
+                  }
+                  className="w-full px-4 py-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-white text-sm focus:outline-none focus:border-zinc-500 resize-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
+                    Instagram Bağlantısı
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="https://instagram.com/..."
+                    value={editingTeamMember.instagram || ''}
+                    onChange={(e) =>
+                      setEditingTeamMember({ ...editingTeamMember, instagram: e.target.value })
+                    }
+                    className="w-full px-4 py-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-white text-sm focus:outline-none focus:border-zinc-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
+                    LinkedIn Bağlantısı
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="https://linkedin.com/in/..."
+                    value={editingTeamMember.linkedin || ''}
+                    onChange={(e) =>
+                      setEditingTeamMember({ ...editingTeamMember, linkedin: e.target.value })
+                    }
+                    className="w-full px-4 py-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-white text-sm focus:outline-none focus:border-zinc-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center pt-2">
+                <div>
+                  <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
+                    Görüntülenme Sırası
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={editingTeamMember.order}
+                    onChange={(e) =>
+                      setEditingTeamMember({
+                        ...editingTeamMember,
+                        order: parseInt(e.target.value) || 1,
+                      })
+                    }
+                    className="w-full px-4 py-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-white text-sm focus:outline-none focus:border-zinc-500"
+                  />
+                </div>
+
+                <div className="flex items-center gap-2 pt-4">
+                  <input
+                    type="checkbox"
+                    id="teamActive"
+                    checked={editingTeamMember.active}
+                    onChange={(e) =>
+                      setEditingTeamMember({ ...editingTeamMember, active: e.target.checked })
+                    }
+                    className="rounded bg-zinc-900 border-zinc-700 text-white focus:ring-0"
+                  />
+                  <label htmlFor="teamActive" className="text-xs text-zinc-300 font-medium">
+                    Web Sitesinde Yayında
+                  </label>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-800 mt-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingTeamMember(null)}
                   className="px-5 py-2.5 rounded-full text-xs font-medium text-zinc-400 hover:text-white"
                 >
                   İptal
