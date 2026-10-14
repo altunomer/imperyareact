@@ -161,6 +161,8 @@ export default {
             });
           }
         }
+      }
+
       // /api/admins
       if (url.pathname === '/api/admins') {
         if (request.method === 'GET') {
