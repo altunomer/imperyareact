@@ -94,3 +94,11 @@ export interface PaymentTransaction {
   status: 'pending' | 'success' | 'failed';
   createdAt: string;
 }
+
+export interface AdminUser {
+  id: string;
+  username: string;
+  password: string;
+  name: string;
+  role: 'admin';
+}

@@ -1,4 +1,4 @@
-import { ServiceItem, ReferenceItem, ProjectItem, SiteSettings, TeamMember } from '@/types';
+import { ServiceItem, ReferenceItem, ProjectItem, SiteSettings, TeamMember, AdminUser } from '@/types';
 
 export const initialServices: ServiceItem[] = [
   {
@@ -273,5 +273,22 @@ export const initialTeamMembers: TeamMember[] = [
     linkedin: 'https://linkedin.com',
     order: 4,
     active: true,
+  },
+];
+
+export const initialAdminUsers: AdminUser[] = [
+  {
+    id: 'admin-1',
+    username: 'muratgundogan',
+    password: 'weareallbanana010203',
+    role: 'admin',
+    name: 'Murat Gündoğan',
+  },
+  {
+    id: 'admin-2',
+    username: 'dr4carys',
+    password: 'LetmeGetin010203*',
+    role: 'admin',
+    name: 'Dr4carys',
   },
 ];

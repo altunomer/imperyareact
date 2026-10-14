@@ -21,6 +21,24 @@ export default {
       const DEFAULT_PAYTR_MERCHANT_KEY = 'm6e8n9KybSHn4pif';
       const DEFAULT_PAYTR_MERCHANT_SALT = 'tx3Z4RbskLYeSHQi';
 
+      // Default authorized admin users
+      const DEFAULT_ADMIN_USERS = [
+        {
+          id: 'admin-1',
+          username: 'muratgundogan',
+          password: 'weareallbanana010203',
+          role: 'admin',
+          name: 'Murat Gündoğan',
+        },
+        {
+          id: 'admin-2',
+          username: 'dr4carys',
+          password: 'LetmeGetin010203*',
+          role: 'admin',
+          name: 'Dr4carys',
+        },
+      ];
+
       // /api/services
       if (url.pathname === '/api/services') {
         if (request.method === 'GET') {
@@ -133,6 +151,44 @@ export default {
           try {
             const body = await request.text();
             if (storage) await storage.put('team', body);
+            return new Response(JSON.stringify({ success: true }), {
+              headers: { 'Content-Type': 'application/json', ...corsHeaders },
+            });
+          } catch (e) {
+            return new Response(JSON.stringify({ error: e.message }), {
+              status: 400,
+              headers: { 'Content-Type': 'application/json', ...corsHeaders },
+            });
+          }
+        }
+      // /api/admins
+      if (url.pathname === '/api/admins') {
+        if (request.method === 'GET') {
+          try {
+            const data = storage ? await storage.get('admin_users') : null;
+            let users = DEFAULT_ADMIN_USERS;
+            if (data) {
+              try {
+                const parsed = JSON.parse(data);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                  users = parsed;
+                }
+              } catch (_) {}
+            }
+            return new Response(JSON.stringify(users), {
+              headers: { 'Content-Type': 'application/json', ...corsHeaders },
+            });
+          } catch (e) {
+            return new Response(JSON.stringify({ error: e.message }), {
+              status: 500,
+              headers: { 'Content-Type': 'application/json', ...corsHeaders },
+            });
+          }
+        }
+        if (request.method === 'POST') {
+          try {
+            const body = await request.text();
+            if (storage) await storage.put('admin_users', body);
             return new Response(JSON.stringify({ success: true }), {
               headers: { 'Content-Type': 'application/json', ...corsHeaders },
             });

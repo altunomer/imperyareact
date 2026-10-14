@@ -1,5 +1,5 @@
-import { ServiceItem, ReferenceItem, ProjectItem, SiteSettings, ContactInquiry, TeamMember } from '@/types';
-import { initialServices, initialReferences, initialProjects, initialSettings, initialTeamMembers } from '@/data/initialData';
+import { ServiceItem, ReferenceItem, ProjectItem, SiteSettings, ContactInquiry, TeamMember, AdminUser } from '@/types';
+import { initialServices, initialReferences, initialProjects, initialSettings, initialTeamMembers, initialAdminUsers } from '@/data/initialData';
 
 const STORAGE_KEYS = {
   SERVICES: 'imperya_services_v1',
@@ -8,6 +8,7 @@ const STORAGE_KEYS = {
   SETTINGS: 'imperya_settings_v1',
   INQUIRIES: 'imperya_inquiries_v1',
   TEAM: 'imperya_team_v1',
+  ADMIN_USERS: 'imperya_admin_users_v1',
   AUTH: 'imperya_admin_auth',
 };
 
@@ -259,6 +260,41 @@ export async function saveTeamMembers(team: TeamMember[]): Promise<boolean> {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(team),
+      });
+    } catch {}
+    return true;
+  }
+  return false;
+}
+
+// --- ADMIN USERS ---
+export async function getAdminUsers(): Promise<AdminUser[]> {
+  if (typeof window === 'undefined') return initialAdminUsers;
+  try {
+    const res = await fetch('/api/admins');
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0) {
+        localStorage.setItem(STORAGE_KEYS.ADMIN_USERS, JSON.stringify(data));
+        return data;
+      }
+    }
+  } catch {}
+  try {
+    const local = localStorage.getItem(STORAGE_KEYS.ADMIN_USERS);
+    if (local) return JSON.parse(local);
+  } catch {}
+  return initialAdminUsers;
+}
+
+export async function saveAdminUsers(users: AdminUser[]): Promise<boolean> {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(STORAGE_KEYS.ADMIN_USERS, JSON.stringify(users));
+    try {
+      await fetch('/api/admins', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(users),
       });
     } catch {}
     return true;

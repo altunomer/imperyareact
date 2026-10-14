@@ -21,6 +21,8 @@ import {
   MessageSquare,
   Lock,
   Users,
+  User,
+  Key,
 } from 'lucide-react';
 import {
   ServiceItem,
@@ -29,6 +31,7 @@ import {
   SiteSettings,
   ContactInquiry,
   TeamMember,
+  AdminUser,
 } from '@/types';
 import {
   getServices,
@@ -43,6 +46,8 @@ import {
   deleteInquiry,
   getTeamMembers,
   saveTeamMembers,
+  getAdminUsers,
+  saveAdminUsers,
 } from '@/lib/storage';
 import {
   initialServices,
@@ -50,17 +55,20 @@ import {
   initialProjects,
   initialSettings,
   initialTeamMembers,
+  initialAdminUsers,
 } from '@/data/initialData';
 import { optimizeImageFile } from '@/lib/imageOptimizer';
 import { testPayTRCredentials } from '@/lib/paytr';
 
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [usernameInput, setUsernameInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
   const [authError, setAuthError] = useState('');
+  const [currentUser, setCurrentUser] = useState<string>('');
 
   const [activeTab, setActiveTab] = useState<
-    'references' | 'services' | 'projects' | 'team' | 'settings' | 'inquiries'
+    'references' | 'services' | 'projects' | 'team' | 'settings' | 'inquiries' | 'admins'
   >('references');
 
   const [services, setServices] = useState<ServiceItem[]>(initialServices);
@@ -69,6 +77,8 @@ export default function AdminPage() {
   const [team, setTeam] = useState<TeamMember[]>(initialTeamMembers);
   const [settings, setSettings] = useState<SiteSettings>(initialSettings);
   const [inquiries, setInquiries] = useState<ContactInquiry[]>([]);
+  const [adminUsers, setAdminUsers] = useState<AdminUser[]>(initialAdminUsers);
+  const [editingAdminUser, setEditingAdminUser] = useState<AdminUser | null>(null);
 
   const [feedbackMessage, setFeedbackMessage] = useState('');
   const [paytrTesting, setPaytrTesting] = useState(false);
@@ -107,20 +117,23 @@ export default function AdminPage() {
   useEffect(() => {
     // Check local session
     const savedAuth = sessionStorage.getItem('imperya_admin_logged_in');
+    const savedUser = sessionStorage.getItem('imperya_admin_username');
     if (savedAuth === 'true') {
       setIsAuthenticated(true);
+      if (savedUser) setCurrentUser(savedUser);
       loadAllData();
     }
   }, []);
 
   const loadAllData = async () => {
-    const [srv, refs, prj, teamData, setts, inq] = await Promise.all([
+    const [srv, refs, prj, teamData, setts, inq, admins] = await Promise.all([
       getServices(),
       getReferences(),
       getProjects(),
       getTeamMembers(),
       getSettings(),
       getInquiries(),
+      getAdminUsers(),
     ]);
     setServices(srv);
     setReferences(refs);
@@ -128,29 +141,105 @@ export default function AdminPage() {
     setTeam(teamData);
     setSettings(setts);
     setInquiries(inq);
+    setAdminUsers(admins);
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Default admin password for ease of access
-    if (passwordInput === 'imperya2026' || passwordInput === 'admin') {
+    setAuthError('');
+    const enteredUser = usernameInput.trim().toLowerCase();
+    const enteredPass = passwordInput;
+
+    const users = await getAdminUsers();
+    const matched = users.find(
+      (u) => u.username.trim().toLowerCase() === enteredUser && u.password === enteredPass
+    );
+
+    if (matched) {
       setIsAuthenticated(true);
       sessionStorage.setItem('imperya_admin_logged_in', 'true');
+      sessionStorage.setItem('imperya_admin_username', matched.username);
+      setCurrentUser(matched.name || matched.username);
       setAuthError('');
       loadAllData();
     } else {
-      setAuthError('Geçersiz şifre! (Varsayılan: imperya2026)');
+      setAuthError('Kullanıcı adı veya şifre hatalı!');
     }
   };
 
   const handleLogout = () => {
     setIsAuthenticated(false);
     sessionStorage.removeItem('imperya_admin_logged_in');
+    sessionStorage.removeItem('imperya_admin_username');
+    setCurrentUser('');
   };
 
   const showToast = (msg: string) => {
     setFeedbackMessage(msg);
     setTimeout(() => setFeedbackMessage(''), 3000);
+  };
+
+  // --- ADMIN USERS ACTIONS ---
+  const handleSaveAdminUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingAdminUser) return;
+    if (!editingAdminUser.username.trim() || !editingAdminUser.password.trim()) {
+      alert('Kullanıcı adı ve şifre zorunludur.');
+      return;
+    }
+
+    let updated: AdminUser[];
+    if (editingAdminUser.id === 'new') {
+      const exists = adminUsers.some(
+        (u) => u.username.toLowerCase() === editingAdminUser.username.trim().toLowerCase()
+      );
+      if (exists) {
+        alert('Bu kullanıcı adı zaten kullanımda.');
+        return;
+      }
+      const newUser: AdminUser = {
+        ...editingAdminUser,
+        id: 'admin-' + Date.now(),
+        username: editingAdminUser.username.trim(),
+        role: 'admin',
+      };
+      updated = [...adminUsers, newUser];
+    } else {
+      const exists = adminUsers.some(
+        (u) =>
+          u.id !== editingAdminUser.id &&
+          u.username.toLowerCase() === editingAdminUser.username.trim().toLowerCase()
+      );
+      if (exists) {
+        alert('Bu kullanıcı adı başka bir yönetici tarafından kullanılıyor.');
+        return;
+      }
+      updated = adminUsers.map((u) =>
+        u.id === editingAdminUser.id
+          ? {
+              ...editingAdminUser,
+              username: editingAdminUser.username.trim(),
+            }
+          : u
+      );
+    }
+
+    setAdminUsers(updated);
+    await saveAdminUsers(updated);
+    setEditingAdminUser(null);
+    showToast('Yönetici bilgileri kaydedildi.');
+  };
+
+  const handleDeleteAdminUser = async (id: string) => {
+    if (adminUsers.length <= 1) {
+      alert('Sistemde en az bir yönetici bulunmalıdır. Son yöneticiyi silemezsiniz.');
+      return;
+    }
+    if (!confirm('Bu yöneticiyi silmek istediğinize emin misiniz?')) return;
+    const updated = adminUsers.filter((u) => u.id !== id);
+    setAdminUsers(updated);
+    await saveAdminUsers(updated);
+    showToast('Yönetici silindi.');
   };
 
   // --- REFERENCE ACTIONS ---
@@ -296,22 +385,40 @@ export default function AdminPage() {
               </picture>
             </div>
             <h1 className="text-2xl font-bold tracking-tight">Yönetim Paneli</h1>
-            <p className="text-xs text-zinc-400 mt-1">Lütfen yönetici şifrenizi giriniz</p>
+            <p className="text-xs text-zinc-400 mt-1">Lütfen yetkili bilgilerinizi giriniz</p>
           </div>
 
           <form onSubmit={handleLogin} className="flex flex-col gap-4">
             <div>
               <label className="block text-xs font-semibold text-zinc-300 mb-2">
-                Yönetici Şifresi
+                Kullanıcı Adı
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Kullanıcı adınızı girin"
+                  value={usernameInput}
+                  onChange={(e) => setUsernameInput(e.target.value)}
+                  className="w-full px-4 py-3 pl-10 rounded-xl bg-zinc-950 border border-zinc-800 text-white placeholder-zinc-600 text-sm focus:outline-none focus:border-zinc-500"
+                  autoFocus
+                  required
+                />
+                <User className="w-4 h-4 text-zinc-500 absolute left-3.5 top-3.5" />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-zinc-300 mb-2">
+                Şifre
               </label>
               <div className="relative">
                 <input
                   type="password"
-                  placeholder="Şifrenizi yazın..."
+                  placeholder="Şifrenizi girin"
                   value={passwordInput}
                   onChange={(e) => setPasswordInput(e.target.value)}
                   className="w-full px-4 py-3 pl-10 rounded-xl bg-zinc-950 border border-zinc-800 text-white placeholder-zinc-600 text-sm focus:outline-none focus:border-zinc-500"
-                  autoFocus
+                  required
                 />
                 <Lock className="w-4 h-4 text-zinc-500 absolute left-3.5 top-3.5" />
               </div>
@@ -453,6 +560,18 @@ export default function AdminPage() {
           >
             <Settings className="w-4 h-4" />
             <span>Site & İletişim</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('admins')}
+            className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-colors ${
+              activeTab === 'admins'
+                ? 'bg-white text-black'
+                : 'text-zinc-400 hover:text-white hover:bg-zinc-900'
+            }`}
+          >
+            <Shield className="w-4 h-4" />
+            <span>Yöneticiler ({adminUsers.length})</span>
           </button>
         </div>
 
@@ -1249,6 +1368,26 @@ export default function AdminPage() {
                 </div>
               </div>
 
+              {/* Shortcut to Admin Management */}
+              <div className="p-4 rounded-2xl bg-zinc-900/50 border border-zinc-800 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-zinc-800 text-white">
+                    <Shield className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-white">Yönetici Giriş Bilgileri & Şifreler</h4>
+                    <p className="text-[11px] text-zinc-400">Yönetici kullanıcı adlarını veya şifrelerini değiştirmek için Yöneticiler sekmesini kullanabilirsiniz.</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('admins')}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold bg-white text-black hover:bg-zinc-200 transition-colors shrink-0"
+                >
+                  Yöneticileri Yönet
+                </button>
+              </div>
+
               <div className="pt-4">
                 <button
                   type="submit"
@@ -1258,6 +1397,99 @@ export default function AdminPage() {
                 </button>
               </div>
             </form>
+          </div>
+        )}
+
+        {/* TAB 7: YÖNETİCİLER & GİRİŞ YETKİLERİ */}
+        {activeTab === 'admins' && (
+          <div className="max-w-4xl">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                  <Shield className="w-5 h-5 text-emerald-400" />
+                  <span>Yöneticiler & Giriş Yetkileri</span>
+                </h2>
+                <p className="text-xs text-zinc-400 mt-1">
+                  Yönetim paneline giriş yapabilecek yetkili hesapları ve şifrelerini buradan yönetebilirsiniz.
+                </p>
+              </div>
+
+              <button
+                onClick={() =>
+                  setEditingAdminUser({
+                    id: 'new',
+                    username: '',
+                    password: '',
+                    name: '',
+                    role: 'admin',
+                  })
+                }
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider text-black bg-white hover:bg-zinc-200 transition-colors self-start sm:self-auto"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Yeni Yönetici Ekle</span>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {adminUsers.map((user) => (
+                <div
+                  key={user.id}
+                  className="p-5 rounded-2xl border border-zinc-800 bg-zinc-900/50 backdrop-blur-sm flex flex-col justify-between gap-4 hover:border-zinc-700 transition-colors"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-zinc-800 border border-zinc-700/80 flex items-center justify-center text-white font-bold text-sm">
+                        {user.name ? user.name.charAt(0).toUpperCase() : user.username.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-bold text-sm text-white">{user.name || user.username}</h3>
+                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                            Tam Yetkili
+                          </span>
+                        </div>
+                        <p className="text-xs text-zinc-400 font-mono mt-0.5">@{user.username}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-zinc-950/70 border border-zinc-800/80 flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2 text-zinc-400">
+                      <Lock className="w-3.5 h-3.5 text-zinc-500" />
+                      <span>Şifre:</span>
+                      <span className="font-mono text-zinc-300 font-semibold">{user.password}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2 pt-2 border-t border-zinc-800/60">
+                    <button
+                      onClick={() => setEditingAdminUser({ ...user })}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-300 hover:text-white hover:bg-zinc-800 transition-colors"
+                    >
+                      <Edit2 className="w-3.5 h-3.5" />
+                      <span>Düzenle / Şifre Değiştir</span>
+                    </button>
+                    {adminUsers.length > 1 && (
+                      <button
+                        onClick={() => handleDeleteAdminUser(user.id)}
+                        className="p-1.5 rounded-lg text-zinc-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                        title="Yöneticiyi Sil"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-8 p-4 rounded-2xl bg-zinc-900/40 border border-zinc-800 text-xs text-zinc-400 flex items-start gap-3">
+              <Shield className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+              <div>
+                <strong className="text-zinc-200">Güvenlik Bilgisi:</strong> Buradaki kullanıcı adları ve şifreler yönetim paneline erişim için geçerlidir. Değişiklik yaptığınızda yeni bilgiler anında veritabanına kaydedilir.
+              </div>
+            </div>
           </div>
         )}
       </div>
@@ -1782,6 +2014,83 @@ export default function AdminPage() {
                 <button
                   type="button"
                   onClick={() => setEditingTeamMember(null)}
+                  className="px-5 py-2.5 rounded-full text-xs font-medium text-zinc-400 hover:text-white"
+                >
+                  İptal
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider text-black bg-white hover:bg-zinc-200"
+                >
+                  Kaydet
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT/ADD ADMIN USER MODAL */}
+      {editingAdminUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="w-full max-w-md bg-zinc-950 border border-zinc-800 rounded-3xl p-8 shadow-2xl">
+            <h3 className="text-xl font-bold text-white mb-6">
+              {editingAdminUser.id === 'new' ? 'Yeni Yönetici Ekle' : 'Yöneticiyi Düzenle'}
+            </h3>
+
+            <form onSubmit={handleSaveAdminUser} className="flex flex-col gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
+                  Ad Soyad / Unvan
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Örn: Murat Gündoğan"
+                  value={editingAdminUser.name || ''}
+                  onChange={(e) =>
+                    setEditingAdminUser({ ...editingAdminUser, name: e.target.value })
+                  }
+                  className="w-full px-4 py-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-white text-sm focus:outline-none focus:border-zinc-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
+                  Kullanıcı Adı (Girişte kullanılır) *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Örn: muratgundogan"
+                  value={editingAdminUser.username}
+                  onChange={(e) =>
+                    setEditingAdminUser({ ...editingAdminUser, username: e.target.value.replace(/\s+/g, '') })
+                  }
+                  className="w-full px-4 py-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-white text-sm focus:outline-none focus:border-zinc-500 font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
+                  Şifre *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Şifreyi girin"
+                  value={editingAdminUser.password}
+                  onChange={(e) =>
+                    setEditingAdminUser({ ...editingAdminUser, password: e.target.value })
+                  }
+                  className="w-full px-4 py-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-white text-sm focus:outline-none focus:border-zinc-500 font-mono"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-800 mt-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingAdminUser(null)}
                   className="px-5 py-2.5 rounded-full text-xs font-medium text-zinc-400 hover:text-white"
                 >
                   İptal
