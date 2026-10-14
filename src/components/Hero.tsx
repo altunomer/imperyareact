@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ArrowUpRight, Sparkles, Play, Film, Award } from 'lucide-react';
+import { ArrowUpRight, Sparkles, Film } from 'lucide-react';
 import { SiteSettings } from '@/types';
 
 interface HeroProps {
@@ -11,33 +11,61 @@ interface HeroProps {
 export default function Hero({ settings }: HeroProps) {
   const heroImg =
     settings?.heroImage ||
-    'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?auto=format&fit=crop&w=1200&q=80';
+    'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?auto=format&fit=crop&w=1600&q=80';
 
   return (
-    <section className="relative min-h-[94vh] flex items-center pt-32 pb-20 px-6 md:px-12 overflow-hidden">
-      {/* 1. Yavaşça Hareket Eden Arka Plan Gradyanı (Moving Ambient Gradient Mesh) */}
+    <section className="relative min-h-[96vh] flex items-center pt-32 pb-24 px-6 md:px-12 overflow-hidden bg-[#09090b]">
+      {/* 1. Tam Ekran Görsel & Sola (Yazıya Doğru) Kademeli Kaybolan Sinematik Gradyan */}
+      <div className="absolute right-0 top-0 bottom-0 w-full lg:w-[65%] xl:w-[60%] h-full overflow-hidden pointer-events-none select-none z-0">
+        {/* Background Showcase Image */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={heroImg}
+          alt="İmperya Media Showcase"
+          className="w-full h-full object-cover object-center scale-105 transform transition-transform duration-1000 ease-out"
+          loading="eager"
+        />
+
+        {/* Çok Katmanlı Sinematik Gradyanlar (Kutusuz, Yazıya Doğru Kayboluş) */}
+        {/* Sol tarafa (Yazıya doğru) ana yumuşak kayboluş gradyanı */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#09090b] via-[#09090b]/85 via-35% sm:via-28% to-transparent" />
+        <div className="absolute inset-y-0 left-0 w-2/3 bg-gradient-to-r from-[#09090b] via-[#09090b]/95 via-30% to-transparent" />
+
+        {/* Üst karartma (Navbar ile kusursuz birleşim) */}
+        <div className="absolute inset-x-0 top-0 h-44 bg-gradient-to-b from-[#09090b] via-[#09090b]/75 to-transparent" />
+
+        {/* Alt karartma (Sonsuz logolara ve alt bölüme kusursuz akış) */}
+        <div className="absolute inset-x-0 bottom-0 h-52 bg-gradient-to-t from-[#09090b] via-[#09090b]/85 to-transparent" />
+
+        {/* Sağ kenar yumuşatma */}
+        <div className="absolute inset-y-0 right-0 w-28 bg-gradient-to-l from-[#09090b]/60 to-transparent" />
+
+        {/* Mavi/Indigo marka renk tonlaması */}
+        <div className="absolute inset-0 bg-gradient-to-tr from-blue-950/40 via-transparent to-indigo-900/20 mix-blend-color-dodge opacity-60" />
+      </div>
+
+      {/* 2. Yavaşça Hareket Eden Arka Plan Gradyan Parıltısı */}
       <div
-        className="absolute top-10 left-10 w-[550px] h-[550px] rounded-full blur-[110px] pointer-events-none opacity-25 animate-pulse"
+        className="absolute top-1/4 left-10 w-[550px] h-[550px] rounded-full blur-[130px] pointer-events-none opacity-25"
         style={{
           background: 'radial-gradient(circle, rgba(37, 99, 235, 0.45) 0%, rgba(79, 70, 229, 0.25) 50%, transparent 80%)',
-          animationDuration: '10s',
         }}
       />
       <div
-        className="absolute bottom-10 right-10 w-[600px] h-[600px] rounded-full blur-[130px] pointer-events-none opacity-20"
+        className="absolute bottom-10 right-1/4 w-[600px] h-[600px] rounded-full blur-[140px] pointer-events-none opacity-20"
         style={{
           background: 'radial-gradient(circle, rgba(14, 165, 233, 0.35) 0%, rgba(99, 102, 241, 0.2) 60%, transparent 80%)',
         }}
       />
 
       {/* Grid Pattern overlay */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_70%_60%_at_50%_50%,#000_70%,transparent_100%)] pointer-events-none" />
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff04_1px,transparent_1px),linear-gradient(to_bottom,#ffffff04_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_70%_60%_at_40%_50%,#000_70%,transparent_100%)] pointer-events-none" />
 
-      {/* Main 2-Column Split Layout */}
-      <div className="relative max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-14 items-center">
+      {/* 3. Foreground Content (Sola Yaslı Metin & Detaylar) */}
+      <div className="relative max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-center z-10">
         
-        {/* SOL ALAN: Sola Yaslı İçerik (7 Kolon) */}
-        <div className="lg:col-span-7 flex flex-col items-start text-left z-10">
+        {/* SOL ALAN: Sola Yaslı İçerik (8 Kolon - Geniş ve Net Okunur) */}
+        <div className="lg:col-span-8 flex flex-col items-start text-left">
           {/* Subtle pill tag */}
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-zinc-800 bg-zinc-950/80 text-zinc-300 text-xs font-medium mb-6 backdrop-blur-md shadow-lg">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
@@ -47,16 +75,16 @@ export default function Hero({ settings }: HeroProps) {
           </div>
 
           {/* Big Agency Headline */}
-          <h1 className="text-4xl sm:text-5xl md:text-6xl xl:text-7xl font-extrabold tracking-tight text-white leading-[1.08] mb-6">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl xl:text-7xl font-extrabold tracking-tight text-white leading-[1.08] mb-6 max-w-3xl drop-shadow-sm">
             Fikirleri markalara, markaları{' '}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-zinc-200 to-zinc-400">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-zinc-100 to-zinc-400">
               kalıcı etkiye
             </span>{' '}
             dönüştürüyoruz.
           </h1>
 
           {/* Subtitle */}
-          <p className="text-base sm:text-lg text-zinc-400 max-w-2xl font-normal leading-relaxed mb-10">
+          <p className="text-base sm:text-lg text-zinc-300/90 max-w-2xl font-normal leading-relaxed mb-10 drop-shadow-sm">
             {settings?.tagline ||
               'Strateji, prodüksiyon, kurumsal kimlik ve dijital iletişimi aynı yaratıcı bakış altında buluşturuyoruz. Markanızın yalnızca görünmesini değil, hafızalara kazınmasını sağlıyoruz.'}
           </p>
@@ -100,74 +128,24 @@ export default function Hero({ settings }: HeroProps) {
           </div>
         </div>
 
-        {/* SAĞ ALAN: Gradyan Görseller & Overlay Vitrini (5 Kolon) */}
-        <div className="lg:col-span-5 relative w-full flex justify-center lg:justify-end">
-          {/* Ambient Glow behind card */}
-          <div className="absolute -inset-4 bg-gradient-to-r from-blue-600/30 via-indigo-600/20 to-purple-600/30 rounded-[2.5rem] blur-2xl opacity-60 group-hover:opacity-100 transition-opacity pointer-events-none" />
-
-          {/* Main Visual Card */}
-          <div className="relative w-full max-w-md lg:max-w-none rounded-3xl p-2 bg-gradient-to-b from-zinc-750/50 via-zinc-850/40 to-zinc-900/60 border border-zinc-700/50 backdrop-blur-xl shadow-2xl overflow-hidden group">
-            
-            {/* Image Container with Gradient Overlays */}
-            <div className="relative aspect-[4/5] sm:aspect-[4/4.8] w-full rounded-2xl overflow-hidden bg-zinc-950">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={heroImg}
-                alt="İmperya Media Showcase"
-                className="w-full h-full object-cover object-center transform group-hover:scale-105 transition-transform duration-700 ease-out"
-                loading="eager"
-              />
-
-              {/* Multi-layered Gradients over Image */}
-              <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/40 to-transparent opacity-90" />
-              <div className="absolute inset-0 bg-gradient-to-tr from-blue-950/30 via-transparent to-indigo-950/20 mix-blend-overlay" />
-
-              {/* Floating Top Badge */}
-              <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/60 border border-white/10 backdrop-blur-md text-[11px] font-semibold text-white tracking-wide">
-                  <Film className="w-3 h-3 text-cyan-400" />
-                  <span>Sinematik Prodüksiyon</span>
-                </span>
-
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-[10px] font-bold">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-                  <span>CANLI PORTFÖY</span>
-                </span>
-              </div>
-
-              {/* Floating Bottom Glass Overlay Card */}
-              <div className="absolute bottom-4 left-4 right-4 p-4 rounded-2xl bg-zinc-900/85 border border-white/10 backdrop-blur-xl shadow-2xl flex items-center justify-between gap-4 transition-transform group-hover:translate-y-[-2px]">
-                <div className="flex flex-col">
-                  <span className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider flex items-center gap-1">
-                    <Sparkles className="w-3 h-3 text-amber-400" />
-                    İmperya Kreatif Vitrini
-                  </span>
-                  <h4 className="text-sm font-bold text-white mt-0.5">
-                    Yeni Nesil Marka Deneyimi
-                  </h4>
-                  <p className="text-[11px] text-zinc-400 mt-0.5 line-clamp-1">
-                    Prodüksiyon • Sosyal Medya • Tasarım
-                  </p>
-                </div>
-
-                <a
-                  href="#islerimiz"
-                  className="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center shrink-0 hover:scale-110 transition-transform shadow-lg"
-                  aria-label="İşlerimizi Gör"
-                >
-                  <Play className="w-4 h-4 fill-black translate-x-0.5" />
-                </a>
-              </div>
-            </div>
-
-            {/* Bottom info strip in card */}
-            <div className="py-2.5 px-3 flex items-center justify-between text-[11px] text-zinc-400">
-              <span className="flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
-                Kayseri Stüdyo & Açık Hava
+        {/* SAĞ ALAN: Serbest, Kutusuz Floating Badge (4 Kolon) */}
+        <div className="lg:col-span-4 hidden lg:flex flex-col items-end justify-center h-full">
+          <div className="p-4 rounded-2xl bg-zinc-950/70 border border-zinc-800/80 backdrop-blur-xl shadow-2xl max-w-xs animate-in fade-in duration-700 hover:border-zinc-700 transition-colors">
+            <div className="flex items-center gap-3 mb-2">
+              <span className="w-9 h-9 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shrink-0">
+                <Film className="w-4 h-4" />
               </span>
-              <span className="text-zinc-500 font-mono text-[10px]">#IMPERYA2026</span>
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  Stüdyo & Prodüksiyon
+                </span>
+                <h4 className="text-xs font-bold text-white">4K Sinematik Çekim</h4>
+              </div>
             </div>
+            <p className="text-[11px] text-zinc-400 leading-relaxed">
+              Kayseri ve global ölçekte üst düzey kreatif video, fotoğraf ve marka çekimleri.
+            </p>
           </div>
         </div>
 
