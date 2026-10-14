@@ -870,9 +870,12 @@ export default function AdminPage() {
                       <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">
                         3D Secure
                       </span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                        🛡️ Kalıcı Korumalı
+                      </span>
                     </h3>
                     <p className="text-xs text-zinc-400 mt-1">
-                      PayTR mağaza panelinizden aldığınız API anahtarlarınızı buraya girin.
+                      PayTR API anahtarlarınız Cloudflare Worker ve KV üzerinde kalıcı olarak korunmaktadır. Formu boş bıraksanız veya başka bir ayarı güncelleseniz dahi mevcut API anahtarlarınız asla silinmez.
                     </p>
                   </div>
 

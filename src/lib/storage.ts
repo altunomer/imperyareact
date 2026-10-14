@@ -109,28 +109,61 @@ export async function saveProjects(projects: ProjectItem[]): Promise<boolean> {
 // --- SETTINGS ---
 export async function getSettings(): Promise<SiteSettings> {
   if (typeof window === 'undefined') return initialSettings;
+  let merged: SiteSettings = { ...initialSettings };
+
   try {
     const res = await fetch('/api/settings');
     if (res.ok) {
       const data = await res.json();
-      if (data && data.siteName) return data;
+      if (data && data.siteName) {
+        merged = {
+          ...initialSettings,
+          ...data,
+          paytrMerchantId: data.paytrMerchantId?.trim() || initialSettings.paytrMerchantId,
+          paytrMerchantKey: data.paytrMerchantKey?.trim() || initialSettings.paytrMerchantKey,
+          paytrMerchantSalt: data.paytrMerchantSalt?.trim() || initialSettings.paytrMerchantSalt,
+        };
+        localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(merged));
+        return merged;
+      }
     }
   } catch {}
+
   try {
     const local = localStorage.getItem(STORAGE_KEYS.SETTINGS);
-    if (local) return JSON.parse(local);
+    if (local) {
+      const parsed = JSON.parse(local);
+      merged = {
+        ...initialSettings,
+        ...parsed,
+        paytrMerchantId: parsed.paytrMerchantId?.trim() || initialSettings.paytrMerchantId,
+        paytrMerchantKey: parsed.paytrMerchantKey?.trim() || initialSettings.paytrMerchantKey,
+        paytrMerchantSalt: parsed.paytrMerchantSalt?.trim() || initialSettings.paytrMerchantSalt,
+      };
+      return merged;
+    }
   } catch {}
-  return initialSettings;
+
+  return merged;
 }
 
 export async function saveSettings(settings: SiteSettings): Promise<boolean> {
   if (typeof window !== 'undefined') {
-    localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
+    // API bilgilerinin kazara silinmesini önleyen güvenlik katmanı
+    const current = await getSettings();
+    const safeSettings: SiteSettings = {
+      ...settings,
+      paytrMerchantId: settings.paytrMerchantId?.trim() || current.paytrMerchantId || initialSettings.paytrMerchantId,
+      paytrMerchantKey: settings.paytrMerchantKey?.trim() || current.paytrMerchantKey || initialSettings.paytrMerchantKey,
+      paytrMerchantSalt: settings.paytrMerchantSalt?.trim() || current.paytrMerchantSalt || initialSettings.paytrMerchantSalt,
+    };
+
+    localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(safeSettings));
     try {
       await fetch('/api/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(settings),
+        body: JSON.stringify(safeSettings),
       });
     } catch {}
     return true;

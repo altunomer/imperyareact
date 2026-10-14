@@ -16,6 +16,11 @@ export default {
 
       const storage = env.IMPERYA_STORAGE || env.STORAGE;
 
+      // Fail-safe constants for PayTR credentials to prevent accidental deletion
+      const DEFAULT_PAYTR_MERCHANT_ID = '756001';
+      const DEFAULT_PAYTR_MERCHANT_KEY = 'm6e8n9KybSHn4pif';
+      const DEFAULT_PAYTR_MERCHANT_SALT = 'tx3Z4RbskLYeSHQi';
+
       // /api/services
       if (url.pathname === '/api/services') {
         if (request.method === 'GET') {
@@ -114,7 +119,12 @@ export default {
         if (request.method === 'GET') {
           try {
             const data = storage ? await storage.get('settings') : null;
-            return new Response(data || 'null', {
+            let current = data ? JSON.parse(data) : {};
+            // Kesin güvence: PayTR anahtarları asla boş dönemez
+            current.paytrMerchantId = current.paytrMerchantId?.trim() || env.PAYTR_MERCHANT_ID || DEFAULT_PAYTR_MERCHANT_ID;
+            current.paytrMerchantKey = current.paytrMerchantKey?.trim() || env.PAYTR_MERCHANT_KEY || DEFAULT_PAYTR_MERCHANT_KEY;
+            current.paytrMerchantSalt = current.paytrMerchantSalt?.trim() || env.PAYTR_MERCHANT_SALT || DEFAULT_PAYTR_MERCHANT_SALT;
+            return new Response(JSON.stringify(current), {
               headers: { 'Content-Type': 'application/json', ...corsHeaders },
             });
           } catch (e) {
@@ -126,9 +136,34 @@ export default {
         }
         if (request.method === 'POST') {
           try {
-            const body = await request.text();
-            if (storage) await storage.put('settings', body);
-            return new Response(JSON.stringify({ success: true }), {
+            const rawBody = await request.text();
+            const incoming = JSON.parse(rawBody);
+            const existingRaw = storage ? await storage.get('settings') : null;
+            const existing = existingRaw ? JSON.parse(existingRaw) : {};
+
+            // Silinmeye karşı mutlak koruma: Gelen veride anahtarlar boş veya tanımsızsa mevcut olanları KORU
+            const safeMerchantId = (incoming.paytrMerchantId && incoming.paytrMerchantId.trim())
+              ? incoming.paytrMerchantId.trim()
+              : (existing.paytrMerchantId || env.PAYTR_MERCHANT_ID || DEFAULT_PAYTR_MERCHANT_ID);
+
+            const safeMerchantKey = (incoming.paytrMerchantKey && incoming.paytrMerchantKey.trim())
+              ? incoming.paytrMerchantKey.trim()
+              : (existing.paytrMerchantKey || env.PAYTR_MERCHANT_KEY || DEFAULT_PAYTR_MERCHANT_KEY);
+
+            const safeMerchantSalt = (incoming.paytrMerchantSalt && incoming.paytrMerchantSalt.trim())
+              ? incoming.paytrMerchantSalt.trim()
+              : (existing.paytrMerchantSalt || env.PAYTR_MERCHANT_SALT || DEFAULT_PAYTR_MERCHANT_SALT);
+
+            const merged = {
+              ...existing,
+              ...incoming,
+              paytrMerchantId: safeMerchantId,
+              paytrMerchantKey: safeMerchantKey,
+              paytrMerchantSalt: safeMerchantSalt,
+            };
+
+            if (storage) await storage.put('settings', JSON.stringify(merged));
+            return new Response(JSON.stringify({ success: true, settings: merged }), {
               headers: { 'Content-Type': 'application/json', ...corsHeaders },
             });
           } catch (e) {
@@ -222,9 +257,9 @@ export default {
             const settingsRaw = storage ? await storage.get('settings') : null;
             const settings = settingsRaw ? JSON.parse(settingsRaw) : {};
 
-            const merchantId = body.merchant_id || settings.paytrMerchantId || env.PAYTR_MERCHANT_ID;
-            const merchantKey = body.merchant_key || settings.paytrMerchantKey || env.PAYTR_MERCHANT_KEY;
-            const merchantSalt = body.merchant_salt || settings.paytrMerchantSalt || env.PAYTR_MERCHANT_SALT;
+            const merchantId = body.merchant_id || settings.paytrMerchantId || env.PAYTR_MERCHANT_ID || DEFAULT_PAYTR_MERCHANT_ID;
+            const merchantKey = body.merchant_key || settings.paytrMerchantKey || env.PAYTR_MERCHANT_KEY || DEFAULT_PAYTR_MERCHANT_KEY;
+            const merchantSalt = body.merchant_salt || settings.paytrMerchantSalt || env.PAYTR_MERCHANT_SALT || DEFAULT_PAYTR_MERCHANT_SALT;
 
             if (!merchantId || !merchantKey || !merchantSalt) {
               return new Response(JSON.stringify({
@@ -317,9 +352,9 @@ export default {
             const settingsRaw = storage ? await storage.get('settings') : null;
             const settings = settingsRaw ? JSON.parse(settingsRaw) : {};
 
-            const merchantId = body.merchant_id || settings.paytrMerchantId || env.PAYTR_MERCHANT_ID;
-            const merchantKey = body.merchant_key || settings.paytrMerchantKey || env.PAYTR_MERCHANT_KEY;
-            const merchantSalt = body.merchant_salt || settings.paytrMerchantSalt || env.PAYTR_MERCHANT_SALT;
+            const merchantId = body.merchant_id || settings.paytrMerchantId || env.PAYTR_MERCHANT_ID || DEFAULT_PAYTR_MERCHANT_ID;
+            const merchantKey = body.merchant_key || settings.paytrMerchantKey || env.PAYTR_MERCHANT_KEY || DEFAULT_PAYTR_MERCHANT_KEY;
+            const merchantSalt = body.merchant_salt || settings.paytrMerchantSalt || env.PAYTR_MERCHANT_SALT || DEFAULT_PAYTR_MERCHANT_SALT;
 
             const id = body.id;
             const signStr = `${id}${merchantId}${merchantSalt}`;
@@ -360,8 +395,8 @@ export default {
 
             const settingsRaw = storage ? await storage.get('settings') : null;
             const settings = settingsRaw ? JSON.parse(settingsRaw) : {};
-            const merchantKey = settings.paytrMerchantKey || env.PAYTR_MERCHANT_KEY;
-            const merchantSalt = settings.paytrMerchantSalt || env.PAYTR_MERCHANT_SALT;
+            const merchantKey = settings.paytrMerchantKey || env.PAYTR_MERCHANT_KEY || DEFAULT_PAYTR_MERCHANT_KEY;
+            const merchantSalt = settings.paytrMerchantSalt || env.PAYTR_MERCHANT_SALT || DEFAULT_PAYTR_MERCHANT_SALT;
 
             if (merchantKey && merchantSalt && post.hash) {
               const hashStr = `${post.callback_id || ''}${post.merchant_oid || ''}${merchantSalt}${post.status || ''}${post.total_amount || ''}`;

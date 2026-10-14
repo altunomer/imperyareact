@@ -16,5 +16,10 @@
       "binding": "IMPERYA_STORAGE",
       "id": "433cae16ac5b4e78bdac93d2d45b2d0c"
     }
-  ]
+  ],
+  "vars": {
+    "PAYTR_MERCHANT_ID": "756001",
+    "PAYTR_MERCHANT_KEY": "m6e8n9KybSHn4pif",
+    "PAYTR_MERCHANT_SALT": "tx3Z4RbskLYeSHQi"
+  }
 }

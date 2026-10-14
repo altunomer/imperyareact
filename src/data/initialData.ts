@@ -207,8 +207,8 @@ export const initialSettings: SiteSettings = {
   siteName: 'İmperya Media Solutions',
   title: 'İmperya Media Solutions | Kreatif Medya & Dijital Ajans',
   tagline: 'Fikirleri markalara, markaları kalıcı etkiye dönüştürüyoruz.',
-  phone: '+90 (352) 000 00 00',
-  whatsapp: '+90 500 000 00 00',
+  phone: '05462500604',
+  whatsapp: '05462500604',
   email: 'info@imperyamediasolutions.com',
   address: 'Sahabiye mahallesi tuğcu sokak. Yelken iş merkezi No:22/10 Kocasinan Kayseri',
   mapsUrl: 'https://maps.google.com/?q=Sahabiye+mahallesi+tuğcu+sokak+Yelken+iş+merkezi+No:22/10+Kocasinan+Kayseri',
@@ -219,9 +219,9 @@ export const initialSettings: SiteSettings = {
   maintenanceMode: false,
   maintenanceTitle: 'Yeni Web Sitemiz Çok Yakında Yayında!',
   maintenanceMessage: 'İmperya Media Solutions olarak sizlere daha iyi bir deneyim sunmak için dijital deneyimimizi güncelliyoruz. Çok yakında buradayız.',
-  // PayTR
-  paytrMerchantId: '',
-  paytrMerchantKey: '',
-  paytrMerchantSalt: '',
+  // PayTR Kalıcı ve Korumalı Bilgiler
+  paytrMerchantId: '756001',
+  paytrMerchantKey: 'm6e8n9KybSHn4pif',
+  paytrMerchantSalt: 'tx3Z4RbskLYeSHQi',
   paytrTestMode: true,
 };
